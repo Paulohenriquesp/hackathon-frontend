@@ -1,44 +1,50 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { MaterialType, Difficulty, MaterialTypeLabels, DifficultyLabels } from '@/types';
-
-interface FormData {
-  title: string;
-  description: string;
-  subject: string;
-  gradeLevel: string;
-  materialType: MaterialType | '';
-  difficulty: Difficulty | '';
-  tags: string;
-  estimatedDuration: string;
-}
-
-const subjects = ['Matemática', 'Português', 'Ciências', 'História', 'Geografia', 'Inglês', 'Educação Física', 'Artes'];
-const gradeLevels = ['1º Ano', '2º Ano', '3º Ano', '4º Ano', '5º Ano', '6º Ano', '7º Ano', '8º Ano', '9º Ano', 'Ensino Médio'];
+import { FileUpload } from '@/components/ui/FileUpload';
+import { ProgressBar } from '@/components/ui/ProgressBar';
+import { 
+  uploadMaterialSchema, 
+  UploadMaterialData, 
+  MaterialType, 
+  Difficulty, 
+  MaterialTypeLabels, 
+  DifficultyLabels,
+  subjects,
+  gradeLevels
+} from '@/types/material';
+import { useUpload } from '@/hooks/useUpload';
+import { CheckCircle2Icon, AlertCircleIcon, Loader2Icon } from 'lucide-react';
 
 export default function UploadPage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<FormData>({
-    title: '',
-    description: '',
-    subject: '',
-    gradeLevel: '',
-    materialType: '',
-    difficulty: '',
-    tags: '',
-    estimatedDuration: ''
+  const { uploadMaterial, resetUpload, status, progress, error, isUploading, isSuccess, isError } = useUpload();
+
+  const {
+    register,
+    handleSubmit,
+    control,
+    setValue,
+    watch,
+    formState: { errors, isValid }
+  } = useForm<UploadMaterialData>({
+    resolver: zodResolver(uploadMaterialSchema),
+    mode: 'onChange',
+    defaultValues: {
+      tags: []
+    }
   });
-  const [file, setFile] = useState<File | null>(null);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+
+  const watchedFile = watch('file');
+  const watchedTags = watch('tags');
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -46,61 +52,43 @@ export default function UploadPage() {
     }
   }, [isAuthenticated, authLoading, router]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+  useEffect(() => {
+    if (isSuccess) {
+      const timer = setTimeout(() => {
+        router.push('/dashboard');
+      }, 3000);
+      return () => clearTimeout(timer);
     }
-  };
+  }, [isSuccess, router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-
-    // Validações
-    if (!formData.title || !formData.description || !formData.subject || !formData.gradeLevel || 
-        !formData.materialType || !formData.difficulty) {
-      setError('Por favor, preencha todos os campos obrigatórios');
-      return;
-    }
-
-    if (!file) {
-      setError('Por favor, selecione um arquivo');
-      return;
-    }
-
-    setLoading(true);
+  const onSubmit = async (data: UploadMaterialData) => {
+    if (!data.file) return;
 
     try {
-      // Simular upload (substituir por API real)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setSuccess('Material enviado com sucesso! Redirecionando para o dashboard...');
-      
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 2000);
-      
+      await uploadMaterial(data);
     } catch (error) {
-      setError('Erro ao enviar material. Tente novamente.');
-    } finally {
-      setLoading(false);
+      console.error('Erro no upload:', error);
     }
+  };
+
+  const handleFileSelect = (file: File | null) => {
+    setValue('file', file as File, { shouldValidate: true });
+  };
+
+  const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const tagsString = e.target.value;
+    const tagsArray = tagsString
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0);
+    setValue('tags', tagsArray, { shouldValidate: true });
   };
 
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <Loader2Icon className="animate-spin h-8 w-8 text-blue-600 mx-auto" />
           <p className="mt-2 text-gray-600">Carregando...</p>
         </div>
       </div>
@@ -123,31 +111,67 @@ export default function UploadPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Informações do Material</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              Informações do Material
+              {isSuccess && <CheckCircle2Icon className="h-5 w-5 text-green-500" />}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
-                  {error}
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {/* Status de Upload */}
+              {isUploading && (
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Loader2Icon className="h-4 w-4 animate-spin text-blue-600" />
+                    <span className="text-sm font-medium text-blue-800">
+                      Enviando material...
+                    </span>
+                  </div>
+                  <ProgressBar progress={progress} className="mt-2" />
                 </div>
               )}
 
-              {success && (
-                <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg">
-                  {success}
+              {isSuccess && (
+                <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2Icon className="h-5 w-5 text-green-600" />
+                    <span className="text-sm font-medium text-green-800">
+                      Material enviado com sucesso! Redirecionando para o dashboard...
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {isError && (
+                <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <AlertCircleIcon className="h-5 w-5 text-red-600" />
+                    <span className="text-sm font-medium text-red-800">
+                      {error}
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={resetUpload}
+                    className="mt-2"
+                  >
+                    Tentar Novamente
+                  </Button>
                 </div>
               )}
 
               {/* Título */}
-              <Input
-                label="Título do Material *"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                placeholder="Ex: Exercícios de Matemática - Frações"
-                required
-              />
+              <div>
+                <Input
+                  label="Título do Material *"
+                  {...register('title')}
+                  placeholder="Ex: Exercícios de Matemática - Frações"
+                  error={errors.title?.message}
+                  disabled={isUploading}
+                />
+              </div>
 
               {/* Descrição */}
               <div>
@@ -155,14 +179,17 @@ export default function UploadPage() {
                   Descrição *
                 </label>
                 <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
+                  {...register('description')}
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    errors.description ? 'border-red-300' : 'border-gray-300'
+                  } ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   placeholder="Descreva detalhadamente o conteúdo do material..."
-                  required
+                  disabled={isUploading}
                 />
+                {errors.description && (
+                  <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+                )}
               </div>
 
               {/* Grid de campos */}
@@ -173,17 +200,20 @@ export default function UploadPage() {
                     Disciplina *
                   </label>
                   <select
-                    name="subject"
-                    value={formData.subject}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
+                    {...register('discipline')}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      errors.discipline ? 'border-red-300' : 'border-gray-300'
+                    } ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={isUploading}
                   >
                     <option value="">Selecione uma disciplina</option>
                     {subjects.map(subject => (
                       <option key={subject} value={subject}>{subject}</option>
                     ))}
                   </select>
+                  {errors.discipline && (
+                    <p className="mt-1 text-sm text-red-600">{errors.discipline.message}</p>
+                  )}
                 </div>
 
                 {/* Série */}
@@ -192,17 +222,20 @@ export default function UploadPage() {
                     Série/Ano *
                   </label>
                   <select
-                    name="gradeLevel"
-                    value={formData.gradeLevel}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
+                    {...register('grade')}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      errors.grade ? 'border-red-300' : 'border-gray-300'
+                    } ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={isUploading}
                   >
                     <option value="">Selecione a série</option>
                     {gradeLevels.map(grade => (
                       <option key={grade} value={grade}>{grade}</option>
                     ))}
                   </select>
+                  {errors.grade && (
+                    <p className="mt-1 text-sm text-red-600">{errors.grade.message}</p>
+                  )}
                 </div>
 
                 {/* Tipo de Material */}
@@ -211,17 +244,20 @@ export default function UploadPage() {
                     Tipo de Material *
                   </label>
                   <select
-                    name="materialType"
-                    value={formData.materialType}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
+                    {...register('materialType')}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      errors.materialType ? 'border-red-300' : 'border-gray-300'
+                    } ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={isUploading}
                   >
                     <option value="">Selecione o tipo</option>
                     {Object.entries(MaterialTypeLabels).map(([key, label]) => (
                       <option key={key} value={key}>{label}</option>
                     ))}
                   </select>
+                  {errors.materialType && (
+                    <p className="mt-1 text-sm text-red-600">{errors.materialType.message}</p>
+                  )}
                 </div>
 
                 {/* Dificuldade */}
@@ -230,100 +266,97 @@ export default function UploadPage() {
                     Nível de Dificuldade *
                   </label>
                   <select
-                    name="difficulty"
-                    value={formData.difficulty}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
+                    {...register('difficulty')}
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      errors.difficulty ? 'border-red-300' : 'border-gray-300'
+                    } ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    disabled={isUploading}
                   >
                     <option value="">Selecione a dificuldade</option>
                     {Object.entries(DifficultyLabels).map(([key, label]) => (
                       <option key={key} value={key}>{label}</option>
                     ))}
                   </select>
+                  {errors.difficulty && (
+                    <p className="mt-1 text-sm text-red-600">{errors.difficulty.message}</p>
+                  )}
                 </div>
               </div>
 
-              {/* Tags */}
+              {/* Subtópico */}
               <Input
-                label="Tags"
-                name="tags"
-                value={formData.tags}
-                onChange={handleInputChange}
-                placeholder="Ex: frações, matemática, exercícios (separadas por vírgula)"
+                label="Subtópico"
+                {...register('subTopic')}
+                placeholder="Ex: Operações básicas, Frações equivalentes"
+                disabled={isUploading}
               />
+
+              {/* Tags */}
+              <div>
+                <Input
+                  label="Tags"
+                  onChange={handleTagsChange}
+                  value={watchedTags?.join(', ') || ''}
+                  placeholder="Ex: frações, matemática, exercícios (separadas por vírgula)"
+                  disabled={isUploading}
+                />
+                {watchedTags && watchedTags.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {watchedTags.map((tag, index) => (
+                      <span 
+                        key={index}
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Duração Estimada */}
               <Input
                 label="Duração Estimada (em minutos)"
-                name="estimatedDuration"
+                {...register('estimatedDuration', { 
+                  setValueAs: (value) => value === '' ? undefined : parseInt(value) 
+                })}
                 type="number"
-                value={formData.estimatedDuration}
-                onChange={handleInputChange}
                 placeholder="Ex: 50"
+                error={errors.estimatedDuration?.message}
+                disabled={isUploading}
               />
 
               {/* Upload de Arquivo */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Arquivo do Material *
-                </label>
-                <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
-                  <div className="space-y-1 text-center">
-                    <svg
-                      className="mx-auto h-12 w-12 text-gray-400"
-                      stroke="currentColor"
-                      fill="none"
-                      viewBox="0 0 48 48"
-                    >
-                      <path
-                        d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    <div className="flex text-sm text-gray-600">
-                      <label className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
-                        <span>Selecione um arquivo</span>
-                        <input
-                          type="file"
-                          className="sr-only"
-                          onChange={handleFileChange}
-                          accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"
-                          required
-                        />
-                      </label>
-                      <p className="pl-1">ou arraste e solte</p>
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      PDF, DOC, PPT, XLS até 10MB
-                    </p>
-                    {file && (
-                      <p className="text-sm text-green-600 mt-2">
-                        Arquivo selecionado: {file.name}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <Controller
+                name="file"
+                control={control}
+                render={({ field }) => (
+                  <FileUpload
+                    onFileSelect={handleFileSelect}
+                    file={watchedFile}
+                    error={errors.file?.message}
+                    disabled={isUploading}
+                  />
+                )}
+              />
 
               {/* Botões */}
               <div className="flex gap-4 pt-6">
                 <Button
                   type="submit"
-                  loading={loading}
-                  disabled={loading}
+                  loading={isUploading}
+                  disabled={isUploading || !isValid || isSuccess}
                   className="flex-1"
                   size="lg"
                 >
-                  {loading ? 'Enviando...' : 'Compartilhar Material'}
+                  {isUploading ? 'Enviando...' : isSuccess ? 'Enviado!' : 'Compartilhar Material'}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => router.push('/dashboard')}
                   size="lg"
+                  disabled={isUploading}
                 >
                   Cancelar
                 </Button>
