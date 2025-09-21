@@ -4,8 +4,9 @@ export interface User {
   name: string;
   email: string;
   school?: string;
-  materialsCount: number;
+  materialsCount?: number;
   createdAt: string;
+  updatedAt?: string;
 }
 
 // Tipos para autenticação
@@ -26,7 +27,7 @@ export interface AuthContextType {
   loading: boolean;
   login: (data: LoginData) => Promise<boolean>;
   register: (data: RegisterData) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
 

@@ -24,11 +24,15 @@ export default function LoginPage() {
       return;
     }
 
-    const success = await login({ email, password });
-    if (success) {
-      router.push('/dashboard');
-    } else {
-      setError('Email ou senha inválidos');
+    try {
+      const success = await login({ email, password });
+      if (success) {
+        router.push('/dashboard');
+      } else {
+        setError('Email ou senha inválidos. Verifique seus dados e tente novamente.');
+      }
+    } catch (error: any) {
+      setError(error.message || 'Erro ao fazer login. Tente novamente.');
     }
   };
 

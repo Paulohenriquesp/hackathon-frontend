@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AuthContextType, User, LoginData, RegisterData } from '@/types';
+import { authService } from '@/services/authService';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -20,14 +21,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const savedUser = localStorage.getItem('user');
       const token = localStorage.getItem('token');
-
-      if (savedUser && token) {
-        setUser(JSON.parse(savedUser));
+      
+      if (token) {
+        // Verificar se o token ainda é válido no servidor
+        const response = await authService.verifyToken();
+        
+        if (response.success && response.data) {
+          setUser(response.data);
+        } else {
+          // Token inválido, limpar storage
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+        }
       }
     } catch (error) {
       console.error('Erro ao verificar autenticação:', error);
+      // Em caso de erro, limpar storage
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
     } finally {
       setLoading(false);
     }
@@ -37,28 +49,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      // Simular login (substituir por API real)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await authService.login(data);
       
-      const mockUser: User = {
-        id: '1',
-        name: 'Professor Teste',
-        email: data.email,
-        school: 'Escola Exemplo',
-        materialsCount: 5,
-        createdAt: new Date().toISOString()
-      };
-      
-      const mockToken = 'mock-token-' + Date.now();
-      
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      localStorage.setItem('token', mockToken);
-      setUser(mockUser);
-      
-      return true;
-    } catch (error) {
+      if (response.success && response.data) {
+        const { user, token } = response.data;
+        
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('token', token);
+        setUser(user);
+        
+        return true;
+      } else {
+        console.error('Erro no login:', response.error || response.message);
+        throw new Error(response.error || response.message || 'Erro no login');
+      }
+    } catch (error: any) {
       console.error('Erro no login:', error);
-      return false;
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -68,37 +75,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      // Simular registro (substituir por API real)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await authService.register(data);
       
-      const mockUser: User = {
-        id: '1',
-        name: data.name,
-        email: data.email,
-        school: data.school || '',
-        materialsCount: 0,
-        createdAt: new Date().toISOString()
-      };
-      
-      const mockToken = 'mock-token-' + Date.now();
-      
-      localStorage.setItem('user', JSON.stringify(mockUser));
-      localStorage.setItem('token', mockToken);
-      setUser(mockUser);
-      
-      return true;
-    } catch (error) {
+      if (response.success && response.data) {
+        const { user, token } = response.data;
+        
+        localStorage.setItem('user', JSON.stringify(user));
+        localStorage.setItem('token', token);
+        setUser(user);
+        
+        return true;
+      } else {
+        console.error('Erro no registro:', response.error || response.message);
+        throw new Error(response.error || response.message || 'Erro no registro');
+      }
+    } catch (error: any) {
       console.error('Erro no registro:', error);
-      return false;
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    setUser(null);
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch (error) {
+      console.error('Erro no logout:', error);
+    } finally {
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      setUser(null);
+    }
   };
 
   const isAuthenticated = !!user;

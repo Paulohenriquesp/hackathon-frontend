@@ -46,17 +46,28 @@ export default function RegisterPage() {
       return;
     }
 
-    const success = await register({
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-      school: formData.school
-    });
+    // Validação de senha conforme backend (maiúscula, minúscula e número)
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      setError('A senha deve conter pelo menos: 1 letra maiúscula, 1 letra minúscula e 1 número');
+      return;
+    }
 
-    if (success) {
-      router.push('/dashboard');
-    } else {
-      setError('Erro ao criar conta. Tente novamente.');
+    try {
+      const success = await register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        school: formData.school
+      });
+
+      if (success) {
+        router.push('/dashboard');
+      } else {
+        setError('Erro ao criar conta. Verifique seus dados e tente novamente.');
+      }
+    } catch (error: any) {
+      setError(error.message || 'Erro ao criar conta. Tente novamente.');
     }
   };
 
@@ -132,7 +143,7 @@ export default function RegisterPage() {
                 label="Senha *"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Mín. 6 caracteres (com maiúscula, minúscula e número)"
                 required
                 icon={
                   <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
