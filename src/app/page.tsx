@@ -1,103 +1,91 @@
-import Image from "next/image";
+import Link from 'next/link';
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 text-white">
+      <div className="max-w-6xl mx-auto px-4 py-20">
+        <div className="text-center">
+          <h1 className="text-5xl md:text-7xl font-bold mb-8">
+            Banco Colaborativo de
+            <span className="block text-blue-200 mt-2">Recursos Didáticos</span>
+          </h1>
+          <p className="text-xl md:text-2xl mb-12 text-blue-100 max-w-4xl mx-auto leading-relaxed">
+            Uma plataforma para professores compartilharem e descobrirem 
+            materiais educacionais de qualidade
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-6 justify-center">
+            <Link href="/register">
+              <button className="bg-white text-blue-600 px-10 py-4 rounded-xl font-bold text-lg hover:bg-blue-50 transition-all duration-300 shadow-lg">
+                🚀 Começar Agora
+              </button>
+            </Link>
+            <Link href="/login">
+              <button className="border-2 border-white px-10 py-4 rounded-xl font-bold text-lg hover:bg-white hover:text-blue-600 transition-all duration-300">
+                👤 Fazer Login
+              </button>
+            </Link>
+          </div>
+          
+          <div className="mt-12">
+            <Link href="/materials">
+              <button className="text-blue-200 hover:text-white transition-colors text-lg underline">
+                Ou explore os materiais sem cadastro →
+              </button>
+            </Link>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
+      
+      {/* Features Section */}
+      <div className="bg-white text-gray-900 py-20">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-6">
+              ✨ Funcionalidades Principais
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Tudo que você precisa para compartilhar e descobrir materiais educacionais
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center p-8 bg-blue-50 rounded-2xl">
+              <div className="text-6xl mb-4">📚</div>
+              <h3 className="text-2xl font-bold mb-4">Compartilhe Materiais</h3>
+              <p className="text-gray-600 text-lg">
+                Faça upload dos seus materiais didáticos e ajude outros professores
+              </p>
+            </div>
+
+            <div className="text-center p-8 bg-green-50 rounded-2xl">
+              <div className="text-6xl mb-4">🔍</div>
+              <h3 className="text-2xl font-bold mb-4">Encontre Recursos</h3>
+              <p className="text-gray-600 text-lg">
+                Busque por disciplina, série e tipo de material educacional
+              </p>
+            </div>
+
+            <div className="text-center p-8 bg-purple-50 rounded-2xl">
+              <div className="text-6xl mb-4">⭐</div>
+              <h3 className="text-2xl font-bold mb-4">Avalie & Comente</h3>
+              <p className="text-gray-600 text-lg">
+                Dê feedback e ajude a comunidade a encontrar os melhores recursos
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="bg-gray-900 text-white py-12">
+        <div className="max-w-6xl mx-auto px-4 text-center">
+          <h3 className="text-2xl font-bold mb-4">🎓 Banco Didático</h3>
+          <p className="text-gray-400">
+            Conectando professores, compartilhando conhecimento
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
