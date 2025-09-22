@@ -284,7 +284,7 @@ enum MaterialType {
 ## 📋 Roadmap
 
 ### Próximas Funcionalidades
-- [ ] Integração com backend real
+- [ x ] Integração com backend real
 - [ ] Sistema de favoritos
 - [ ] Comentários e avaliações
 - [ ] Notificações push
