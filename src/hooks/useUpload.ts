@@ -21,9 +21,7 @@ export function useUpload() {
         error: null
       }));
 
-      // Preparar FormData
-      const formData = new FormData();
-      console.log('🔍 useUpload: Dados recebidos:', {
+      console.log('🔍 useUpload: Iniciando upload com dados:', {
         title: data.title,
         description: data.description,
         discipline: data.discipline,
@@ -31,92 +29,103 @@ export function useUpload() {
         materialType: data.materialType,
         difficulty: data.difficulty,
         subTopic: data.subTopic,
-        estimatedDuration: data.estimatedDuration,
-        tags: data.tags,
-        file: data.file?.name
+        fileName: data.file?.name
       });
+
+      // Preparar FormData conforme o backend espera
+      const formData = new FormData();
       
+      // Campos obrigatórios
       formData.append('title', data.title);
       formData.append('description', data.description);
       formData.append('discipline', data.discipline);
       formData.append('grade', data.grade);
-      formData.append('materialType', data.materialType);
-      formData.append('difficulty', data.difficulty);
+      formData.append('materialType', data.materialType); // Enum: LESSON_PLAN, EXERCISE, etc.
+      formData.append('difficulty', data.difficulty); // Enum: EASY, MEDIUM, HARD
       
-      if (data.subTopic) {
-        formData.append('subTopic', data.subTopic);
+      // Campos opcionais
+      if (data.subTopic?.trim()) {
+        formData.append('subTopic', data.subTopic.trim());
       }
       
-      if (data.estimatedDuration) {
-        formData.append('estimatedDuration', data.estimatedDuration.toString());
-      }
       
-      if (data.tags && data.tags.length > 0) {
-        formData.append('tags', JSON.stringify(data.tags));
+      // Arquivo obrigatório
+      if (!data.file) {
+        throw new Error('Arquivo é obrigatório');
       }
-      
       formData.append('file', data.file);
-      
+
       // Log do FormData para debug
       console.log('🔍 useUpload: FormData preparado:');
-      for (let [key, value] of formData.entries()) {
-        console.log(`  ${key}:`, value);
+      for (const [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`  ${key}: [File] ${value.name} (${value.type})`);
+        } else {
+          console.log(`  ${key}: ${value}`);
+        }
       }
 
-      // Fazer upload com acompanhamento de progresso usando Authorization header
+      // Fazer upload com XMLHttpRequest para acompanhar progresso
       const xhr = new XMLHttpRequest();
 
-      // Promise para aguardar conclusão
       const uploadPromise = new Promise<any>((resolve, reject) => {
+        // Progresso do upload
         xhr.upload.addEventListener('progress', (event) => {
           if (event.lengthComputable) {
             const progress = Math.round((event.loaded / event.total) * 100);
-            setState(prev => ({
-              ...prev,
-              progress
-            }));
+            setState(prev => ({ ...prev, progress }));
           }
         });
 
+        // Resposta do servidor
         xhr.addEventListener('load', () => {
           if (xhr.status >= 200 && xhr.status < 300) {
             try {
               const response = JSON.parse(xhr.responseText);
+              console.log('✅ useUpload: Upload bem-sucedido:', response);
               resolve(response);
             } catch (error) {
+              console.error('❌ useUpload: Erro ao parsear resposta:', error);
               reject(new Error('Erro ao processar resposta do servidor'));
             }
           } else {
             try {
               const errorResponse = JSON.parse(xhr.responseText);
-              reject(new Error(errorResponse.error || 'Erro no upload'));
+              console.error('❌ useUpload: Erro do servidor:', errorResponse);
+              reject(new Error(errorResponse.error || `Erro ${xhr.status}`));
             } catch {
-              reject(new Error(`Erro no upload: ${xhr.status}`));
+              console.error('❌ useUpload: Erro HTTP:', xhr.status);
+              reject(new Error(`Erro ${xhr.status}: ${xhr.statusText}`));
             }
           }
         });
 
         xhr.addEventListener('error', () => {
-          reject(new Error('Erro de conexão'));
+          console.error('❌ useUpload: Erro de conexão');
+          reject(new Error('Erro de conexão com o servidor'));
         });
 
         xhr.addEventListener('timeout', () => {
-          reject(new Error('Timeout no upload'));
+          console.error('❌ useUpload: Timeout');
+          reject(new Error('Timeout: Upload demorou muito para completar'));
         });
       });
 
-      // Configurar e enviar requisição com Authorization header
+      // Configurar e enviar requisição
       xhr.open('POST', `${API_URL}/materials`);
+      
+      // Adicionar token de autorização
       const token = authStore.getToken();
-      console.log('🔍 useUpload: Token disponível:', !!token);
-      console.log('🔍 useUpload: URL:', `${API_URL}/materials`);
-      if (token) {
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-        console.log('✅ useUpload: Authorization header definido');
-      } else {
-        console.error('❌ useUpload: Token não encontrado!');
+      if (!token) {
+        throw new Error('Token de acesso não encontrado. Faça login novamente.');
       }
-      xhr.timeout = 30000; // 30 segundos
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      console.log('✅ useUpload: Authorization header definido');
+      
+      // Timeout de 2 minutos para uploads grandes
+      xhr.timeout = 120000;
+      
+      console.log('🚀 useUpload: Enviando requisição...');
       xhr.send(formData);
 
       // Aguardar conclusão
@@ -126,13 +135,13 @@ export function useUpload() {
         ...prev,
         status: UploadStatus.SUCCESS,
         progress: 100,
-        materialId: response.data.material.id
+        materialId: response.data?.material?.id
       }));
 
       return response.data;
 
     } catch (error: any) {
-      console.error('Erro no upload:', error);
+      console.error('❌ useUpload: Erro no upload:', error);
       
       setState(prev => ({
         ...prev,

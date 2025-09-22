@@ -40,7 +40,6 @@ export interface Material {
   gradeLevel: string;
   materialType: MaterialType;
   difficulty: Difficulty;
-  tags: string[];
   fileUrl?: string;
   fileName?: string;
   downloadCount: number;
@@ -99,7 +98,6 @@ export interface MaterialFilters {
   gradeLevel?: string;
   materialType?: MaterialType;
   difficulty?: Difficulty;
-  tags?: string[];
 }
 
 // Tipos para API

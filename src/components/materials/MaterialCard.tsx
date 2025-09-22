@@ -112,24 +112,6 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
           {material.description}
         </p>
 
-        {/* Tags */}
-        {material.tags && material.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
-            {material.tags.slice(0, 3).map((tag, index) => (
-              <span
-                key={index}
-                className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700"
-              >
-                {tag}
-              </span>
-            ))}
-            {material.tags.length > 3 && (
-              <span className="text-xs text-gray-500">
-                +{material.tags.length - 3} mais
-              </span>
-            )}
-          </div>
-        )}
       </div>
 
       {/* Info Section */}
@@ -149,7 +131,7 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
           <Badge className={getDifficultyColor(material.difficulty)}>
             {DifficultyLabels[material.difficulty]}
           </Badge>
-          <Badge variant="outline">
+          <Badge variant="secondary">
             {MaterialTypeLabels[material.materialType]}
           </Badge>
         </div>
@@ -168,12 +150,6 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
               <span>{material.downloadCount}</span>
             </div>
           </div>
-          {material.estimatedDuration && (
-            <div className="flex items-center gap-1 text-gray-500">
-              <Clock className="h-4 w-4" />
-              <span>{formatDuration(material.estimatedDuration)}</span>
-            </div>
-          )}
         </div>
 
         {/* Author & Date */}

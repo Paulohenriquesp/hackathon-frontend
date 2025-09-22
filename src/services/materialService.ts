@@ -28,13 +28,11 @@ export interface Material {
   materialType: MaterialType;
   subTopic?: string;
   difficulty: Difficulty;
-  estimatedDuration?: number;
   fileUrl?: string;
   fileName?: string;
   avgRating: number;
   totalRatings: number;
   downloadCount: number;
-  tags: string[];
   createdAt: string;
   isNew?: boolean;
   isPopular?: boolean;
@@ -63,7 +61,6 @@ export interface MaterialFilters {
   dateFrom?: string;
   dateTo?: string;
   search?: string;
-  tags?: string;
   hasFile?: boolean;
   featured?: boolean;
   sortBy?: 'createdAt' | 'title' | 'avgRating' | 'downloadCount' | 'totalRatings';

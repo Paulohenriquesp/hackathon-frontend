@@ -59,11 +59,6 @@ export const uploadMaterialSchema = z.object({
   difficulty: z.nativeEnum(Difficulty, { 
     message: 'Dificuldade é obrigatória' 
   }),
-  estimatedDuration: z.number()
-    .int()
-    .positive('Duração deve ser um número positivo')
-    .optional(),
-  tags: z.array(z.string()).default([]),
   file: z.instanceof(File, { message: 'Arquivo é obrigatório' })
     .refine((file) => file.size <= 10 * 1024 * 1024, 'Arquivo deve ter no máximo 10MB')
     .refine(

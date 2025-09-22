@@ -37,14 +37,10 @@ export default function UploadPage() {
     formState: { errors, isValid }
   } = useForm<UploadMaterialData>({
     resolver: zodResolver(uploadMaterialSchema),
-    mode: 'onChange',
-    defaultValues: {
-      tags: []
-    }
+    mode: 'onChange'
   });
 
   const watchedFile = watch('file');
-  const watchedTags = watch('tags');
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -75,14 +71,6 @@ export default function UploadPage() {
     setValue('file', file as File, { shouldValidate: true });
   };
 
-  const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const tagsString = e.target.value;
-    const tagsArray = tagsString
-      .split(',')
-      .map(tag => tag.trim())
-      .filter(tag => tag.length > 0);
-    setValue('tags', tagsArray, { shouldValidate: true });
-  };
 
   if (authLoading) {
     return (
@@ -291,40 +279,7 @@ export default function UploadPage() {
                 disabled={isUploading}
               />
 
-              {/* Tags */}
-              <div>
-                <Input
-                  label="Tags"
-                  onChange={handleTagsChange}
-                  value={watchedTags?.join(', ') || ''}
-                  placeholder="Ex: frações, matemática, exercícios (separadas por vírgula)"
-                  disabled={isUploading}
-                />
-                {watchedTags && watchedTags.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {watchedTags.map((tag, index) => (
-                      <span 
-                        key={index}
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
 
-              {/* Duração Estimada */}
-              <Input
-                label="Duração Estimada (em minutos)"
-                {...register('estimatedDuration', { 
-                  setValueAs: (value) => value === '' ? undefined : parseInt(value) 
-                })}
-                type="number"
-                placeholder="Ex: 50"
-                error={errors.estimatedDuration?.message}
-                disabled={isUploading}
-              />
 
               {/* Upload de Arquivo */}
               <Controller
