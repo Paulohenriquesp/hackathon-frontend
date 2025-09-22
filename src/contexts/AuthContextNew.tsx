@@ -4,7 +4,7 @@ import React, { createContext, useContext, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { AuthContextType, User, LoginData, RegisterData } from '@/types';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 interface AuthState {
   user: User | null;
