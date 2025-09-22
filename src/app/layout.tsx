@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { QueryProvider } from "@/providers/QueryProvider";
+import { AuthProvider } from "@/contexts/AuthContextNew";
+import { ToastProvider } from "@/components/ui/Toast";
 import { Header } from "@/components/layout/Header";
 
 const inter = Inter({
@@ -21,14 +23,18 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={`${inter.className} antialiased`}>
-        <AuthProvider>
-          <div className="min-h-screen bg-gray-50">
-            <Header />
-            <main>
-              {children}
-            </main>
-          </div>
-        </AuthProvider>
+        <ToastProvider>
+          <QueryProvider>
+            <AuthProvider>
+              <div className="min-h-screen bg-gray-50">
+                <Header />
+                <main>
+                  {children}
+                </main>
+              </div>
+            </AuthProvider>
+          </QueryProvider>
+        </ToastProvider>
       </body>
     </html>
   );

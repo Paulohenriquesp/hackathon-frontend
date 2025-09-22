@@ -1,20 +1,19 @@
 import axios from 'axios';
 import { MaterialType, Difficulty } from '@/types/material';
+import { authStore } from '@/contexts/AuthContextNew';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
-// Configurar axios
+// Configurar axios com interceptor para Authorization header
 const api = axios.create({
   baseURL: API_URL,
 });
 
-// Interceptor para adicionar token
+// Interceptor para adicionar token automaticamente
 api.interceptors.request.use((config) => {
-  if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+  const token = authStore.getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });

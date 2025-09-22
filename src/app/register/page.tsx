@@ -3,9 +3,11 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContextNew';
+import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { PasswordInput } from '@/components/ui/PasswordInput';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 
 export default function RegisterPage() {
@@ -18,6 +20,7 @@ export default function RegisterPage() {
   });
   const [error, setError] = useState('');
   const { register, loading } = useAuth();
+  const { showToast } = useToast();
   const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,12 +65,16 @@ export default function RegisterPage() {
       });
 
       if (success) {
+        showToast('Conta criada com sucesso! Bem-vindo ao Banco Didático!', 'success', 3000);
         router.push('/dashboard');
       } else {
+        showToast('Erro ao criar conta. Verifique seus dados e tente novamente.', 'error');
         setError('Erro ao criar conta. Verifique seus dados e tente novamente.');
       }
     } catch (error: any) {
-      setError(error.message || 'Erro ao criar conta. Tente novamente.');
+      const errorMessage = error.message || 'Erro ao criar conta. Tente novamente.';
+      showToast(errorMessage, 'error');
+      setError(errorMessage);
     }
   };
 
@@ -137,34 +144,22 @@ export default function RegisterPage() {
                 }
               />
 
-              <Input
-                type="password"
+              <PasswordInput
                 name="password"
-                label="Senha *"
+                label="Senha"
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Mín. 6 caracteres (com maiúscula, minúscula e número)"
                 required
-                icon={
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                }
               />
 
-              <Input
-                type="password"
+              <PasswordInput
                 name="confirmPassword"
-                label="Confirmar Senha *"
+                label="Confirmar Senha"
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 placeholder="Digite a senha novamente"
                 required
-                icon={
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                }
               />
 
               <Button 

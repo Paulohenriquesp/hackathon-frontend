@@ -52,12 +52,12 @@ export const uploadMaterialSchema = z.object({
     .min(2, 'Disciplina é obrigatória'),
   grade: z.string()
     .min(1, 'Série é obrigatória'),
-  materialType: z.nativeEnum(MaterialType, {
-    errorMap: () => ({ message: 'Tipo de material é obrigatório' })
+  materialType: z.nativeEnum(MaterialType, { 
+    message: 'Tipo de material é obrigatório' 
   }),
   subTopic: z.string().optional(),
-  difficulty: z.nativeEnum(Difficulty, {
-    errorMap: () => ({ message: 'Dificuldade é obrigatória' })
+  difficulty: z.nativeEnum(Difficulty, { 
+    message: 'Dificuldade é obrigatória' 
   }),
   estimatedDuration: z.number()
     .int()

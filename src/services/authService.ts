@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { LoginData, RegisterData, User, ApiResponse } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
@@ -12,184 +11,157 @@ export interface LoginResponse extends ApiResponse<AuthResponse> {}
 export interface RegisterResponse extends ApiResponse<AuthResponse> {}
 export interface ProfileResponse extends ApiResponse<User> {}
 
-const authAPI = axios.create({
-  baseURL: `${API_URL}/auth`,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+// Função auxiliar para fazer requisições com Authorization header
+const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+  const token = localStorage.getItem('token');
+  
+  const response = await fetch(`${API_URL}/auth${url}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...options.headers,
+    },
+  });
 
-// Interceptor para adicionar token em todas as requisições
-authAPI.interceptors.request.use(
-  (config) => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `HTTP ${response.status}`);
   }
-);
 
-// Interceptor para tratar respostas e erros
-authAPI.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token inválido, limpar storage
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
-      }
-    }
-    return Promise.reject(error);
-  }
-);
+  return response.json();
+};
 
 export const authService = {
   async login(data: LoginData): Promise<LoginResponse> {
     try {
-      const response = await authAPI.post<AuthResponse>('/login', {
-        email: data.email,
-        password: data.password,
+      console.log('🔍 authService: Fazendo login...');
+      const responseData = await fetchWithAuth('/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+        }),
       });
       
+      // Salvar token no localStorage
+      if (responseData.success && responseData.data.token) {
+        localStorage.setItem('token', responseData.data.token);
+        localStorage.setItem('user', JSON.stringify(responseData.data.user));
+        console.log('✅ authService: Token salvo no localStorage');
+      }
+      
+      console.log('✅ authService: Login bem-sucedido');
       return {
         success: true,
-        data: response.data,
+        data: responseData.data,
       };
     } catch (error: any) {
-      console.error('Erro no login:', error);
-      
+      console.error('❌ authService: Erro no login:', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Erro interno do servidor',
-        message: error.response?.data?.message || 'Falha no login',
+        error: error.message || 'Erro interno do servidor',
+        message: 'Falha no login',
       };
     }
   },
 
   async register(data: RegisterData): Promise<RegisterResponse> {
     try {
-      const response = await authAPI.post<AuthResponse>('/register', {
-        name: data.name,
-        email: data.email,
-        password: data.password,
-        school: data.school || undefined,
+      console.log('🔍 authService: Fazendo registro...');
+      const responseData = await fetchWithAuth('/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: data.name,
+          email: data.email,
+          password: data.password,
+          school: data.school || undefined,
+        }),
       });
       
+      // Salvar token no localStorage
+      if (responseData.success && responseData.data.token) {
+        localStorage.setItem('token', responseData.data.token);
+        localStorage.setItem('user', JSON.stringify(responseData.data.user));
+        console.log('✅ authService: Token salvo no localStorage');
+      }
+      
+      console.log('✅ authService: Registro bem-sucedido');
       return {
         success: true,
-        data: response.data,
+        data: responseData.data,
       };
     } catch (error: any) {
-      console.error('Erro no registro:', error);
-      
+      console.error('❌ authService: Erro no registro:', error);
       return {
         success: false,
-        error: error.response?.data?.error || 'Erro interno do servidor',
-        message: error.response?.data?.message || 'Falha no cadastro',
-      };
-    }
-  },
-
-  async getProfile(): Promise<ProfileResponse> {
-    try {
-      const response = await authAPI.get<User>('/profile');
-      
-      return {
-        success: true,
-        data: response.data,
-      };
-    } catch (error: any) {
-      console.error('Erro ao buscar perfil:', error);
-      
-      return {
-        success: false,
-        error: error.response?.data?.error || 'Erro interno do servidor',
-        message: error.response?.data?.message || 'Falha ao carregar perfil',
-      };
-    }
-  },
-
-  async updateProfile(data: { name?: string; school?: string }): Promise<ProfileResponse> {
-    try {
-      const response = await authAPI.put<User>('/profile', data);
-      
-      return {
-        success: true,
-        data: response.data,
-      };
-    } catch (error: any) {
-      console.error('Erro ao atualizar perfil:', error);
-      
-      return {
-        success: false,
-        error: error.response?.data?.error || 'Erro interno do servidor',
-        message: error.response?.data?.message || 'Falha ao atualizar perfil',
-      };
-    }
-  },
-
-  async changePassword(currentPassword: string, newPassword: string): Promise<ApiResponse> {
-    try {
-      const response = await authAPI.post('/change-password', {
-        currentPassword,
-        newPassword,
-      });
-      
-      return {
-        success: true,
-        data: response.data,
-      };
-    } catch (error: any) {
-      console.error('Erro ao alterar senha:', error);
-      
-      return {
-        success: false,
-        error: error.response?.data?.error || 'Erro interno do servidor',
-        message: error.response?.data?.message || 'Falha ao alterar senha',
-      };
-    }
-  },
-
-  async logout(): Promise<ApiResponse> {
-    try {
-      await authAPI.post('/logout');
-      
-      return {
-        success: true,
-      };
-    } catch (error: any) {
-      console.error('Erro no logout:', error);
-      
-      // Mesmo com erro, ainda queremos limpar o localStorage
-      return {
-        success: true,
+        error: error.message || 'Erro interno do servidor',
+        message: 'Falha no cadastro',
       };
     }
   },
 
   async verifyToken(): Promise<ApiResponse<User>> {
     try {
-      const response = await authAPI.get<User>('/verify');
+      console.log('🔍 authService: Verificando token...');
+      const responseData = await fetchWithAuth('/verify');
+      
+      console.log('✅ authService: Token válido');
+      return {
+        success: true,
+        data: responseData.data.user,
+      };
+    } catch (error: any) {
+      console.error('❌ authService: Erro na verificação do token:', error);
+      return {
+        success: false,
+        error: error.message || 'Token inválido',
+        message: 'Sessão expirada',
+      };
+    }
+  },
+
+  async logout(): Promise<ApiResponse> {
+    try {
+      console.log('🔍 authService: Fazendo logout...');
+      await fetchWithAuth('/logout', {
+        method: 'POST',
+      });
+      
+      // Limpar localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      console.log('✅ authService: Logout bem-sucedido, localStorage limpo');
       
       return {
         success: true,
-        data: response.data,
       };
     } catch (error: any) {
-      console.error('Erro na verificação do token:', error);
+      console.error('❌ authService: Erro no logout:', error);
+      // Mesmo com erro, limpar localStorage
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      return {
+        success: true,
+      };
+    }
+  },
+
+  async getProfile(): Promise<ProfileResponse> {
+    try {
+      console.log('🔍 authService: Buscando perfil...');
+      const responseData = await fetchWithAuth('/profile');
       
       return {
+        success: true,
+        data: responseData.data,
+      };
+    } catch (error: any) {
+      console.error('❌ authService: Erro ao buscar perfil:', error);
+      return {
         success: false,
-        error: error.response?.data?.error || 'Token inválido',
-        message: error.response?.data?.message || 'Sessão expirada',
+        error: error.message || 'Erro interno do servidor',
+        message: 'Falha ao carregar perfil',
       };
     }
   },

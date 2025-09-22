@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { UploadMaterialData, UploadStatus, UploadState } from '@/types/material';
+import { authStore } from '@/contexts/AuthContextNew';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -22,6 +23,19 @@ export function useUpload() {
 
       // Preparar FormData
       const formData = new FormData();
+      console.log('🔍 useUpload: Dados recebidos:', {
+        title: data.title,
+        description: data.description,
+        discipline: data.discipline,
+        grade: data.grade,
+        materialType: data.materialType,
+        difficulty: data.difficulty,
+        subTopic: data.subTopic,
+        estimatedDuration: data.estimatedDuration,
+        tags: data.tags,
+        file: data.file?.name
+      });
+      
       formData.append('title', data.title);
       formData.append('description', data.description);
       formData.append('discipline', data.discipline);
@@ -42,14 +56,14 @@ export function useUpload() {
       }
       
       formData.append('file', data.file);
-
-      // Obter token de autenticação
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Token de autenticação não encontrado');
+      
+      // Log do FormData para debug
+      console.log('🔍 useUpload: FormData preparado:');
+      for (let [key, value] of formData.entries()) {
+        console.log(`  ${key}:`, value);
       }
 
-      // Fazer upload com acompanhamento de progresso
+      // Fazer upload com acompanhamento de progresso usando Authorization header
       const xhr = new XMLHttpRequest();
 
       // Promise para aguardar conclusão
@@ -91,9 +105,17 @@ export function useUpload() {
         });
       });
 
-      // Configurar e enviar requisição
+      // Configurar e enviar requisição com Authorization header
       xhr.open('POST', `${API_URL}/materials`);
-      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      const token = authStore.getToken();
+      console.log('🔍 useUpload: Token disponível:', !!token);
+      console.log('🔍 useUpload: URL:', `${API_URL}/materials`);
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        console.log('✅ useUpload: Authorization header definido');
+      } else {
+        console.error('❌ useUpload: Token não encontrado!');
+      }
       xhr.timeout = 30000; // 30 segundos
       xhr.send(formData);
 

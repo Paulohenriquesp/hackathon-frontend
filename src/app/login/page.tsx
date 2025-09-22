@@ -3,9 +3,12 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContextNew';
+import { useToast } from '@/components/ui/Toast';
+import { useAuthRedirect } from '@/hooks/useAuthRedirect';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { PasswordInput } from '@/components/ui/PasswordInput';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 
 export default function LoginPage() {
@@ -13,7 +16,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { login, loading } = useAuth();
+  const { showToast } = useToast();
   const router = useRouter();
+  
+  // Redirecionar se já estiver autenticado
+  const { isAuthenticated, loading: authLoading } = useAuthRedirect('/dashboard', false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,13 +33,18 @@ export default function LoginPage() {
 
     try {
       const success = await login({ email, password });
+      
       if (success) {
+        showToast('Login realizado com sucesso! Bem-vindo de volta!', 'success', 2000);
         router.push('/dashboard');
       } else {
+        showToast('Email ou senha inválidos.', 'error');
         setError('Email ou senha inválidos. Verifique seus dados e tente novamente.');
       }
     } catch (error: any) {
-      setError(error.message || 'Erro ao fazer login. Tente novamente.');
+      const errorMessage = error.message || 'Erro ao fazer login. Tente novamente.';
+      showToast(errorMessage, 'error');
+      setError(errorMessage);
     }
   };
 
@@ -72,18 +84,12 @@ export default function LoginPage() {
                 }
               />
 
-              <Input
-                type="password"
+              <PasswordInput
                 label="Senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Sua senha"
                 required
-                icon={
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                }
               />
 
               <Button 
