@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { MaterialType, Difficulty } from '@/types/material';
-import { authStore } from '@/contexts/AuthContextNew';
+import { authStore } from '@/contexts/AuthContext';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 

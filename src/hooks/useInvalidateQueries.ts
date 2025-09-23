@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '@/contexts/AuthContextNew';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * Hook para invalidação de queries de materiais

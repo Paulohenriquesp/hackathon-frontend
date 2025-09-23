@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { materialService } from '@/services/materialService';
-import { useAuth } from '@/contexts/AuthContextNew';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DashboardStats {
   totalMaterials: number;

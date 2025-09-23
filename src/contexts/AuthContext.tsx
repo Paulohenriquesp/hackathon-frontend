@@ -1,138 +1,206 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useRef } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AuthContextType, User, LoginData, RegisterData } from '@/types';
-import { authService } from '@/services/authService';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+
+interface AuthState {
+  user: User | null;
+  token: string | null;
+}
+
+class AuthStore {
+  private state: AuthState = { user: null, token: null };
+  private listeners: Set<() => void> = new Set();
+
+  getState() {
+    return this.state;
+  }
+
+  setState(newState: Partial<AuthState>) {
+    this.state = { ...this.state, ...newState };
+    this.listeners.forEach(listener => listener());
+  }
+
+  subscribe(listener: () => void) {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  setAuth(user: User, token: string) {
+    this.setState({ user, token });
+  }
+
+  clearAuth() {
+    this.setState({ user: null, token: null });
+  }
+
+  getToken() {
+    return this.state.token;
+  }
+}
+
+const authStore = new AuthStore();
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+// Hook para usar o store de auth
+function useAuthStore() {
+  const [state, setState] = React.useState(authStore.getState());
 
-  useEffect(() => {
-    checkAuth();
+  React.useEffect(() => {
+    return authStore.subscribe(() => {
+      setState(authStore.getState());
+    });
   }, []);
 
-  const checkAuth = async () => {
-    if (typeof window === 'undefined') {
-      setLoading(false);
-      return;
-    }
+  return state;
+}
 
-    try {
-      const token = localStorage.getItem('token');
-      const savedUser = localStorage.getItem('user');
-      
-      if (token && savedUser) {
-        console.log('🔍 AuthContext: Token e usuário encontrados no localStorage');
-        
-        // Primeiro, definir o usuário a partir do localStorage para evitar lag
-        try {
-          const parsedUser = JSON.parse(savedUser);
-          setUser(parsedUser);
-          console.log('✅ AuthContext: Usuário carregado do localStorage');
-        } catch (e) {
-          console.error('❌ AuthContext: Erro ao parsear usuário do localStorage');
-        }
-        
-        // Depois, verificar se o token ainda é válido no servidor
-        console.log('🔍 AuthContext: Verificando token no servidor...');
-        const response = await authService.verifyToken();
-        
-        if (response.success && response.data) {
-          console.log('✅ AuthContext: Token válido no servidor');
-          setUser(response.data);
-        } else {
-          console.log('❌ AuthContext: Token inválido no servidor, limpando storage');
-          localStorage.removeItem('user');
-          localStorage.removeItem('token');
-          setUser(null);
-        }
-      } else {
-        console.log('❌ AuthContext: Token ou usuário não encontrado no localStorage');
-        setUser(null);
-      }
-    } catch (error) {
-      console.error('❌ AuthContext: Erro ao verificar autenticação:', error);
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
-      setUser(null);
-    } finally {
-      setLoading(false);
+// Função para fazer requisições com token
+export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+  const token = authStore.getToken();
+  
+  const response = await fetch(`${API_URL}${url}`, {
+    ...options,
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      // Token inválido, limpar auth
+      authStore.clearAuth();
     }
-  };
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `HTTP ${response.status}`);
+  }
+
+  return response.json();
+};
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const authState = useAuthStore();
+  const queryClient = useQueryClient();
+
+  // Mutation para login
+  const loginMutation = useMutation({
+    mutationFn: async (data: LoginData) => {
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro no login');
+      }
+
+      return response.json();
+    },
+    onSuccess: (response) => {
+      if (response.success && response.data) {
+        authStore.setAuth(response.data.user, response.data.token);
+        console.log('✅ Login bem-sucedido, token armazenado em memória');
+      }
+    },
+  });
+
+  // Mutation para registro
+  const registerMutation = useMutation({
+    mutationFn: async (data: RegisterData) => {
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Erro no registro');
+      }
+
+      return response.json();
+    },
+    onSuccess: (response) => {
+      if (response.success && response.data) {
+        authStore.setAuth(response.data.user, response.data.token);
+        console.log('✅ Registro bem-sucedido, token armazenado em memória');
+      }
+    },
+  });
+
+  // Query para verificar token (só executa se tiver token)
+  const { isLoading } = useQuery({
+    queryKey: ['auth', 'verify'],
+    queryFn: async () => {
+      return fetchWithAuth('/auth/verify');
+    },
+    enabled: !!authState.token,
+    onSuccess: (response) => {
+      if (response.success && response.data) {
+        authStore.setState({ user: response.data.user });
+        console.log('✅ Token verificado com sucesso');
+      }
+    },
+    onError: (error) => {
+      console.error('❌ Token inválido:', error);
+      authStore.clearAuth();
+    },
+  });
 
   const login = async (data: LoginData): Promise<boolean> => {
     try {
-      setLoading(true);
-      
-      console.log('🔍 AuthContext login: Iniciando login...');
-      const response = await authService.login(data);
-      console.log('🔍 AuthContext login: Resposta recebida:', response);
-      
-      if (response.success && response.data) {
-        const { user } = response.data;
-        
-        console.log('✅ AuthContext login: Login bem-sucedido, token salvo no localStorage');
-        setUser(user);
-        
-        return true;
-      } else {
-        console.error('❌ AuthContext login: Erro no login:', response.error || response.message);
-        throw new Error(response.error || response.message || 'Erro no login');
-      }
+      await loginMutation.mutateAsync(data);
+      return true;
     } catch (error: any) {
-      console.error('❌ AuthContext login: Erro no login:', error);
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
   const register = async (data: RegisterData): Promise<boolean> => {
     try {
-      setLoading(true);
-      
-      console.log('🔍 AuthContext register: Iniciando registro...');
-      const response = await authService.register(data);
-      
-      if (response.success && response.data) {
-        const { user } = response.data;
-        
-        console.log('✅ AuthContext register: Registro bem-sucedido, token salvo no localStorage');
-        setUser(user);
-        
-        return true;
-      } else {
-        console.error('❌ AuthContext register: Erro no registro:', response.error || response.message);
-        throw new Error(response.error || response.message || 'Erro no registro');
-      }
+      await registerMutation.mutateAsync(data);
+      return true;
     } catch (error: any) {
-      console.error('❌ AuthContext register: Erro no registro:', error);
       throw error;
-    } finally {
-      setLoading(false);
     }
   };
 
   const logout = async () => {
     try {
-      console.log('🔍 AuthContext logout: Fazendo logout...');
-      await authService.logout();
-      console.log('✅ AuthContext logout: Logout bem-sucedido, localStorage limpo');
-    } catch (error) {
-      console.error('❌ AuthContext logout: Erro no logout:', error);
+      // Tentar chamar logout no backend (opcional)
+      if (authState.token) {
+        await fetchWithAuth('/auth/logout', { method: 'POST' }).catch(() => {
+          // Ignorar erros de logout no backend
+        });
+      }
     } finally {
-      setUser(null);
+      // Sempre limpar estado local
+      authStore.clearAuth();
+
+      // Invalidar todo o cache do React Query para remover dados do usuário anterior
+      queryClient.clear();
+
+      console.log('✅ Logout realizado, memória e cache limpos');
     }
   };
 
-  const isAuthenticated = !!user;
+  const isAuthenticated = !!authState.user && !!authState.token;
+  const loading = loginMutation.isPending || registerMutation.isPending || (!!authState.token && isLoading);
 
   return (
     <AuthContext.Provider value={{
-      user,
+      user: authState.user,
       loading,
       login,
       register,
@@ -151,3 +219,6 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
+// Export do store para uso em outros lugares
+export { authStore };
