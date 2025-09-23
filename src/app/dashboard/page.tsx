@@ -8,56 +8,27 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Material } from '@/types';
-
-// Dados mock - substituir por API real depois
-const mockMaterials: Material[] = [
-  {
-    id: '1',
-    title: 'Exercícios de Matemática - Frações',
-    description: 'Lista completa de exercícios sobre frações para 5º ano do ensino fundamental',
-    subject: 'Matemática',
-    gradeLevel: '5º Ano',
-    materialType: 'EXERCISE' as any,
-    difficulty: 'MEDIUM' as any,
-    downloadCount: 45,
-    rating: 4.5,
-    totalRatings: 12,
-    createdAt: '2024-01-15T10:00:00Z',
-    author: {
-      id: '1',
-      name: 'Professor Teste',
-      school: 'Escola Exemplo'
-    }
-  },
-  {
-    id: '2',
-    title: 'Plano de Aula - Sistema Solar',
-    description: 'Plano completo sobre o sistema solar com atividades práticas e experimentos',
-    subject: 'Ciências',
-    gradeLevel: '4º Ano',
-    materialType: 'LESSON_PLAN' as any,
-    difficulty: 'EASY' as any,
-    downloadCount: 32,
-    rating: 4.8,
-    totalRatings: 8,
-    createdAt: '2024-01-10T14:30:00Z',
-    author: {
-      id: '1',
-      name: 'Professor Teste',
-      school: 'Escola Exemplo'
-    }
-  }
-];
+import { materialService } from '@/services/materialService';
+import { useQuery } from '@tanstack/react-query';
 
 export default function DashboardPage() {
   const { user, isAuthenticated, loading } = useAuth();
   const router = useRouter();
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [stats, setStats] = useState({
-    totalMaterials: 0,
-    totalDownloads: 0,
-    averageRating: 0,
-    thisMonthUploads: 0
+
+  // Query para buscar estatísticas gerais
+  const { data: statsData, isLoading: statsLoading } = useQuery({
+    queryKey: ['materials', 'stats'],
+    queryFn: () => materialService.getStats(),
+    enabled: !!isAuthenticated,
+    staleTime: 1000 * 60 * 5, // 5 minutos
+  });
+
+  // Query para buscar materiais do usuário
+  const { data: myMaterialsData, isLoading: materialsLoading } = useQuery({
+    queryKey: ['materials', 'my-materials'],
+    queryFn: () => materialService.getMyMaterials({ page: 1, limit: 5 }),
+    enabled: !!isAuthenticated,
+    staleTime: 1000 * 60 * 2, // 2 minutos
   });
 
   useEffect(() => {
@@ -66,25 +37,28 @@ export default function DashboardPage() {
     }
   }, [isAuthenticated, loading, router]);
 
-  useEffect(() => {
-    if (user) {
-      // Simular carregamento de dados
-      setMaterials(mockMaterials);
-      setStats({
-        totalMaterials: 2,
-        totalDownloads: 77,
-        averageRating: 4.7,
-        thisMonthUploads: 2
-      });
-    }
-  }, [user]);
+  // Calcular estatísticas do usuário atual
+  const userStats = {
+    totalMaterials: myMaterialsData?.data?.pagination?.count || 0,
+    totalDownloads: myMaterialsData?.data?.materials?.reduce((sum, material) => sum + (material.downloadCount || 0), 0) || 0,
+    averageRating: myMaterialsData?.data?.materials?.length > 0
+      ? (myMaterialsData.data.materials.reduce((sum, material) => sum + (material.avgRating || 0), 0) / myMaterialsData.data.materials.length)
+      : 0,
+    thisMonthUploads: myMaterialsData?.data?.materials?.filter(material => {
+      const createdAt = new Date(material.createdAt);
+      const now = new Date();
+      return createdAt.getMonth() === now.getMonth() && createdAt.getFullYear() === now.getFullYear();
+    }).length || 0
+  };
 
-  if (loading) {
+  const materials = myMaterialsData?.data?.materials || [];
+
+  if (loading || (statsLoading && materialsLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Carregando...</p>
+          <p className="mt-2 text-gray-600">Carregando dashboard...</p>
         </div>
       </div>
     );
@@ -115,7 +89,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Meus Materiais</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalMaterials}</p>
+                  <p className="text-2xl font-bold text-gray-900">{userStats.totalMaterials}</p>
                 </div>
               </div>
             </CardContent>
@@ -131,7 +105,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Downloads</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalDownloads}</p>
+                  <p className="text-2xl font-bold text-gray-900">{userStats.totalDownloads}</p>
                 </div>
               </div>
             </CardContent>
@@ -147,7 +121,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Avaliação Média</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.averageRating}</p>
+                  <p className="text-2xl font-bold text-gray-900">{userStats.averageRating.toFixed(1)}</p>
                 </div>
               </div>
             </CardContent>
@@ -163,7 +137,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Este Mês</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.thisMonthUploads}</p>
+                  <p className="text-2xl font-bold text-gray-900">{userStats.thisMonthUploads}</p>
                 </div>
               </div>
             </CardContent>
@@ -222,8 +196,8 @@ export default function DashboardPage() {
                         <p className="text-gray-600 mb-3 line-clamp-2">{material.description}</p>
                         
                         <div className="flex flex-wrap gap-2 mb-4">
-                          <Badge variant="primary">{material.subject}</Badge>
-                          <Badge variant="secondary">{material.gradeLevel}</Badge>
+                          <Badge variant="primary">{material.discipline}</Badge>
+                          <Badge variant="secondary">{material.grade}</Badge>
                           <Badge variant="default">{material.materialType}</Badge>
                         </div>
 
@@ -238,7 +212,7 @@ export default function DashboardPage() {
                             <svg className="w-4 h-4 fill-current text-yellow-400" viewBox="0 0 24 24">
                               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                             </svg>
-                            {material.rating} ({material.totalRatings} avaliações)
+                            {material.avgRating.toFixed(1)} ({material.totalRatings} avaliações)
                           </span>
                           <span>{new Date(material.createdAt).toLocaleDateString('pt-BR')}</span>
                         </div>

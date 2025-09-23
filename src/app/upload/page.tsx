@@ -169,7 +169,7 @@ export default function UploadPage() {
                 <textarea
                   {...register('description')}
                   rows={4}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400 ${
                     errors.description ? 'border-red-300' : 'border-gray-300'
                   } ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   placeholder="Descreva detalhadamente o conteúdo do material..."
@@ -189,7 +189,7 @@ export default function UploadPage() {
                   </label>
                   <select
                     {...register('discipline')}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 ${
                       errors.discipline ? 'border-red-300' : 'border-gray-300'
                     } ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     disabled={isUploading}
@@ -211,7 +211,7 @@ export default function UploadPage() {
                   </label>
                   <select
                     {...register('grade')}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 ${
                       errors.grade ? 'border-red-300' : 'border-gray-300'
                     } ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     disabled={isUploading}
@@ -233,7 +233,7 @@ export default function UploadPage() {
                   </label>
                   <select
                     {...register('materialType')}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 ${
                       errors.materialType ? 'border-red-300' : 'border-gray-300'
                     } ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     disabled={isUploading}
@@ -255,7 +255,7 @@ export default function UploadPage() {
                   </label>
                   <select
                     {...register('difficulty')}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 ${
                       errors.difficulty ? 'border-red-300' : 'border-gray-300'
                     } ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     disabled={isUploading}
