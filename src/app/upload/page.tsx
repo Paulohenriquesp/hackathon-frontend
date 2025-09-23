@@ -21,12 +21,14 @@ import {
   gradeLevels
 } from '@/types/material';
 import { useUpload } from '@/hooks/useUpload';
+import { useInvalidateQueries } from '@/hooks/useInvalidateQueries';
 import { CheckCircle2Icon, AlertCircleIcon, Loader2Icon } from 'lucide-react';
 
 export default function UploadPage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
   const { uploadMaterial, resetUpload, status, progress, error, isUploading, isSuccess, isError } = useUpload();
+  const { invalidateDashboard, invalidateAll } = useInvalidateQueries();
 
   const {
     register,
@@ -50,12 +52,16 @@ export default function UploadPage() {
 
   useEffect(() => {
     if (isSuccess) {
+      // Invalidar cache após upload bem-sucedido
+      invalidateDashboard();
+      invalidateAll();
+
       const timer = setTimeout(() => {
         router.push('/dashboard');
       }, 3000);
       return () => clearTimeout(timer);
     }
-  }, [isSuccess, router]);
+  }, [isSuccess, router, invalidateDashboard, invalidateAll]);
 
   const onSubmit = async (data: UploadMaterialData) => {
     if (!data.file) return;

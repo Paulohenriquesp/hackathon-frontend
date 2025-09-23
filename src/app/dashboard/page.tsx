@@ -8,52 +8,26 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Material } from '@/types';
-import { materialService } from '@/services/materialService';
-import { useQuery } from '@tanstack/react-query';
+import { useDashboard } from '@/hooks/useDashboard';
 
 export default function DashboardPage() {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const router = useRouter();
-
-  // Query para buscar estatísticas gerais
-  const { data: statsData, isLoading: statsLoading } = useQuery({
-    queryKey: ['materials', 'stats'],
-    queryFn: () => materialService.getStats(),
-    enabled: !!isAuthenticated,
-    staleTime: 1000 * 60 * 5, // 5 minutos
-  });
-
-  // Query para buscar materiais do usuário
-  const { data: myMaterialsData, isLoading: materialsLoading } = useQuery({
-    queryKey: ['materials', 'my-materials'],
-    queryFn: () => materialService.getMyMaterials({ page: 1, limit: 5 }),
-    enabled: !!isAuthenticated,
-    staleTime: 1000 * 60 * 2, // 2 minutos
-  });
+  const { materials, stats, loading, error, refresh } = useDashboard();
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isAuthenticated, loading, router]);
+  }, [isAuthenticated, authLoading, router]);
 
-  // Calcular estatísticas do usuário atual
-  const userStats = {
-    totalMaterials: myMaterialsData?.data?.pagination?.count || 0,
-    totalDownloads: myMaterialsData?.data?.materials?.reduce((sum, material) => sum + (material.downloadCount || 0), 0) || 0,
-    averageRating: myMaterialsData?.data?.materials?.length > 0
-      ? (myMaterialsData.data.materials.reduce((sum, material) => sum + (material.avgRating || 0), 0) / myMaterialsData.data.materials.length)
-      : 0,
-    thisMonthUploads: myMaterialsData?.data?.materials?.filter(material => {
-      const createdAt = new Date(material.createdAt);
-      const now = new Date();
-      return createdAt.getMonth() === now.getMonth() && createdAt.getFullYear() === now.getFullYear();
-    }).length || 0
+  // Função utilitária para truncar texto
+  const truncateText = (text: string, maxLength: number = 40): string => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength).trim() + '...';
   };
 
-  const materials = myMaterialsData?.data?.materials || [];
-
-  if (loading || (statsLoading && materialsLoading)) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -66,6 +40,28 @@ export default function DashboardPage() {
 
   if (!isAuthenticated) {
     return null;
+  }
+
+  // Tratamento de erro usando o hook
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+            <div className="flex items-center gap-2 mb-2">
+              <svg className="h-5 w-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-red-800 font-medium">Erro ao carregar dashboard</span>
+            </div>
+            <p className="text-red-700 mb-4">{error}</p>
+            <Button onClick={refresh} variant="outline" size="sm">
+              Tentar Novamente
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -89,7 +85,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Meus Materiais</p>
-                  <p className="text-2xl font-bold text-gray-900">{userStats.totalMaterials}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalMaterials}</p>
                 </div>
               </div>
             </CardContent>
@@ -105,7 +101,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Downloads</p>
-                  <p className="text-2xl font-bold text-gray-900">{userStats.totalDownloads}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.totalDownloads}</p>
                 </div>
               </div>
             </CardContent>
@@ -121,7 +117,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Avaliação Média</p>
-                  <p className="text-2xl font-bold text-gray-900">{userStats.averageRating.toFixed(1)}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.averageRating.toFixed(1)}</p>
                 </div>
               </div>
             </CardContent>
@@ -137,7 +133,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Este Mês</p>
-                  <p className="text-2xl font-bold text-gray-900">{userStats.thisMonthUploads}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.thisMonthUploads}</p>
                 </div>
               </div>
             </CardContent>
@@ -193,7 +189,7 @@ export default function DashboardPage() {
                         <h3 className="text-lg font-semibold text-gray-900 mb-2">
                           {material.title}
                         </h3>
-                        <p className="text-gray-600 mb-3 line-clamp-2">{material.description}</p>
+                        <p className="text-gray-600 mb-3">{truncateText(material.description)}</p>
                         
                         <div className="flex flex-wrap gap-2 mb-4">
                           <Badge variant="primary">{material.discipline}</Badge>

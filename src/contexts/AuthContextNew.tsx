@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useRef } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AuthContextType, User, LoginData, RegisterData } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
@@ -87,6 +87,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const authState = useAuthStore();
+  const queryClient = useQueryClient();
 
   // Mutation para login
   const loginMutation = useMutation({
@@ -186,7 +187,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       // Sempre limpar estado local
       authStore.clearAuth();
-      console.log('✅ Logout realizado, memória limpa');
+
+      // Invalidar todo o cache do React Query para remover dados do usuário anterior
+      queryClient.clear();
+
+      console.log('✅ Logout realizado, memória e cache limpos');
     }
   };
 

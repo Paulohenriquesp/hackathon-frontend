@@ -13,7 +13,7 @@ import { Material } from '@/services/materialService';
 import { MaterialTypeLabels, DifficultyLabels } from '@/types/material';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { useDownload, useRating } from '@/hooks/useMaterials';
+import { useMaterialActions } from '@/hooks/useMaterialActions';
 
 interface MaterialCardProps {
   material: Material;
@@ -24,8 +24,12 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
   const [showRatingForm, setShowRatingForm] = useState(false);
   const [userRating, setUserRating] = useState(0);
   const [userComment, setUserComment] = useState('');
-  const { downloadMaterial, downloading } = useDownload();
-  const { rateMaterial, rating: isRating } = useRating();
+  const {
+    downloadMaterial,
+    rateMaterial,
+    download,
+    rating
+  } = useMaterialActions();
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR');
@@ -37,6 +41,12 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
     return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}min` : `${hours}h`;
+  };
+
+  // Função utilitária para truncar texto
+  const truncateText = (text: string, maxLength: number = 40): string => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength).trim() + '...';
   };
 
   const renderStars = (rating: number, interactive: boolean = false, size: 'sm' | 'md' = 'sm') => {
@@ -59,8 +69,12 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
     );
   };
 
-  const handleDownload = () => {
-    downloadMaterial(material.id, material.title);
+  const handleDownload = async () => {
+    try {
+      await downloadMaterial(material.id);
+    } catch (error) {
+      console.error('Erro no download:', error);
+    }
   };
 
   const handleRating = async () => {
@@ -77,7 +91,7 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
       setUserComment('');
       onRatingChange?.();
     } catch (error) {
-      alert('Erro ao avaliar material');
+      console.error('Erro ao avaliar material:', error);
     }
   };
 
@@ -108,8 +122,8 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
           </div>
         </div>
 
-        <p className="text-gray-600 text-sm line-clamp-3 mb-3">
-          {material.description}
+        <p className="text-gray-600 text-sm mb-3">
+          {truncateText(material.description)}
         </p>
 
       </div>
@@ -173,11 +187,11 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
         <div className="flex gap-2">
           <Button
             onClick={handleDownload}
-            disabled={downloading === material.id || !material.fileUrl}
+            disabled={download.isLoading || !material.fileUrl}
             className="flex-1 flex items-center gap-2"
             size="sm"
           >
-            {downloading === material.id ? (
+            {download.isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Download className="h-4 w-4" />
@@ -223,11 +237,11 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
               <div className="flex gap-2">
                 <Button
                   onClick={handleRating}
-                  disabled={userRating === 0 || isRating}
+                  disabled={userRating === 0 || rating.isLoading}
                   size="sm"
                   className="flex-1"
                 >
-                  {isRating ? (
+                  {rating.isLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
                   ) : (
                     <MessageSquare className="h-4 w-4 mr-2" />
