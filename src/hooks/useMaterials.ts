@@ -71,11 +71,39 @@ export function useMaterials(
       }
     } catch (error: any) {
       console.error('Erro ao buscar materiais:', error);
-      setState(prev => ({
-        ...prev,
-        error: error.response?.data?.error || 'Erro ao carregar materiais',
-        loading: false
-      }));
+
+      // Se o erro for 404 ou indicar que não há materiais, não mostrar como erro
+      const isEmptyResult = error.response?.status === 404 ||
+                           error.response?.data?.message?.includes('Nenhum material encontrado') ||
+                           error.response?.data?.error?.includes('Nenhum material encontrado');
+
+      if (isEmptyResult) {
+        setState(prev => ({
+          ...prev,
+          materials: [],
+          pagination: {
+            current: 1,
+            total: 0,
+            count: 0,
+            limit: 12,
+            hasNext: false,
+            hasPrev: false
+          },
+          stats: {
+            totalMaterials: 0,
+            avgRating: 0,
+            avgDownloads: 0
+          },
+          loading: false,
+          error: null
+        }));
+      } else {
+        setState(prev => ({
+          ...prev,
+          error: error.response?.data?.error || 'Erro ao carregar materiais',
+          loading: false
+        }));
+      }
     }
   }, []);
 

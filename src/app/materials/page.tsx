@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
-import { Loader2, AlertCircle, BookOpen } from 'lucide-react';
+import { Loader2, AlertCircle, BookOpen, Upload, Plus } from 'lucide-react';
 import { SearchFilters } from '@/components/materials/SearchFilters';
 import { MaterialCard } from '@/components/materials/MaterialCard';
 import { Button } from '@/components/ui/Button';
@@ -146,31 +146,79 @@ export default function MaterialsPage() {
           </div>
         ) : (
           /* Empty State */
-          <div className="flex flex-col items-center justify-center py-12">
-            <BookOpen className="h-16 w-16 text-gray-300 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Nenhum material encontrado
-            </h3>
-            <p className="text-gray-600 text-center max-w-md mb-4">
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="bg-blue-50 rounded-full p-6 mb-6">
+              <BookOpen className="h-16 w-16 text-blue-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">
               {Object.keys(currentFilters).length > 0
-                ? 'Não encontramos materiais que correspondam aos seus filtros. Tente ajustar os critérios de busca.'
-                : 'Ainda não há materiais disponíveis. Seja o primeiro a compartilhar um recurso educacional!'
+                ? 'Nenhum material encontrado'
+                : 'Bem-vindo à nossa biblioteca!'
+              }
+            </h3>
+            <p className="text-gray-600 text-center max-w-lg mb-8 text-lg">
+              {Object.keys(currentFilters).length > 0
+                ? 'Não encontramos materiais que correspondam aos seus filtros. Tente ajustar os critérios de busca ou explore nossa coleção completa.'
+                : 'Ainda não há materiais disponíveis. Seja o primeiro a compartilhar um recurso educacional e ajude a construir nossa comunidade de professores!'
               }
             </p>
-            
-            {Object.keys(currentFilters).length > 0 ? (
-              <Button
-                variant="outline"
-                onClick={() => handleFiltersChange({})}
-              >
-                Limpar Filtros
-              </Button>
-            ) : (
-              <Button
-                onClick={() => window.location.href = '/upload'}
-              >
-                Compartilhar Material
-              </Button>
+
+            <div className="flex flex-col sm:flex-row gap-4">
+              {Object.keys(currentFilters).length > 0 ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleFiltersChange({})}
+                    className="flex items-center gap-2"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    Ver Todos os Materiais
+                  </Button>
+                  <Button
+                    onClick={() => window.location.href = '/upload'}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Adicionar Material
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    onClick={() => window.location.href = '/upload'}
+                    className="flex items-center gap-2"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Compartilhar Primeiro Material
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => window.location.href = '/dashboard'}
+                    className="flex items-center gap-2"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    Voltar ao Dashboard
+                  </Button>
+                </>
+              )}
+            </div>
+
+            {Object.keys(currentFilters).length === 0 && (
+              <div className="mt-8 text-center">
+                <p className="text-sm text-gray-500 mb-4">
+                  Precisa de inspiração? Aqui estão alguns tipos de materiais que você pode compartilhar:
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {['Planos de Aula', 'Exercícios', 'Apresentações', 'Vídeos', 'Jogos Educativos'].map((type) => (
+                    <span
+                      key={type}
+                      className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                    >
+                      {type}
+                    </span>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         )}
