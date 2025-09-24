@@ -139,21 +139,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     },
   });
 
-  // Query para verificar token (só executa se tiver token)
+  // Query para verificar token (executa sempre ao inicializar)
   const { isLoading } = useQuery({
     queryKey: ['auth', 'verify'],
     queryFn: async () => {
-      return fetchWithAuth('/auth/verify');
+      // Tenta verificar o token mesmo sem estado local
+      // O backend deve verificar cookies ou sessão
+      const response = await fetch(`${API_URL}/auth/verify`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          // Token inválido ou não existe, limpar auth
+          authStore.clearAuth();
+        }
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      return response.json();
     },
-    enabled: !!authState.token,
+    enabled: true, // Sempre executa ao inicializar
+    retry: 1,
     onSuccess: (response) => {
       if (response.success && response.data) {
-        authStore.setState({ user: response.data.user });
-        console.log('✅ Token verificado com sucesso');
+        // Se o backend retornou usuário válido, restaurar estado
+        authStore.setAuth(response.data.user, response.data.token || 'validated');
+        console.log('✅ Sessão restaurada com sucesso:', response.data.user.name);
       }
     },
     onError: (error) => {
-      console.error('❌ Token inválido:', error);
+      console.log('ℹ️ Nenhuma sessão ativa encontrada:', error.message);
       authStore.clearAuth();
     },
   });
@@ -196,7 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isAuthenticated = !!authState.user && !!authState.token;
-  const loading = loginMutation.isPending || registerMutation.isPending || (!!authState.token && isLoading);
+  const loading = loginMutation.isPending || registerMutation.isPending || isLoading;
 
   return (
     <AuthContext.Provider value={{
