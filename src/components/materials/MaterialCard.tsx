@@ -1,19 +1,23 @@
 import React, { useState } from 'react';
-import { 
-  Download, 
-  Star, 
-  Clock, 
-  User, 
+import {
+  Download,
+  Star,
+  Clock,
+  User,
   Calendar,
   FileText,
   Loader2,
-  MessageSquare
+  MessageSquare,
+  Lock
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Material } from '@/services/materialService';
 import { MaterialTypeLabels, DifficultyLabels } from '@/types/material';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useMaterialActions } from '@/hooks/useMaterialActions';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/components/ui/Toast';
 
 interface MaterialCardProps {
   material: Material;
@@ -24,6 +28,9 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
   const [showRatingForm, setShowRatingForm] = useState(false);
   const [userRating, setUserRating] = useState(0);
   const [userComment, setUserComment] = useState('');
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+  const { showToast } = useToast();
   const {
     downloadMaterial,
     rateMaterial,
@@ -70,10 +77,22 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
   };
 
   const handleDownload = async () => {
+    // Verificar se está autenticado
+    if (!isAuthenticated) {
+      showToast('Você precisa fazer login para baixar materiais', 'warning', 4000);
+      // Redirecionar para login após 1 segundo
+      setTimeout(() => {
+        router.push('/login');
+      }, 1000);
+      return;
+    }
+
     try {
       await downloadMaterial(material.id);
-    } catch (error) {
+      showToast('Download iniciado!', 'success', 3000);
+    } catch (error: any) {
       console.error('Erro no download:', error);
+      showToast(error.message || 'Erro ao fazer download', 'error', 4000);
     }
   };
 
@@ -190,15 +209,18 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
             disabled={download.isLoading || !material.fileUrl}
             className="flex-1 flex items-center gap-2"
             size="sm"
+            variant={!isAuthenticated ? 'outline' : 'primary'}
           >
             {download.isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
+            ) : !isAuthenticated ? (
+              <Lock className="h-4 w-4" />
             ) : (
               <Download className="h-4 w-4" />
             )}
-            Download
+            {!isAuthenticated ? 'Login para Baixar' : 'Download'}
           </Button>
-          
+
           <Button
             variant="outline"
             onClick={() => setShowRatingForm(!showRatingForm)}

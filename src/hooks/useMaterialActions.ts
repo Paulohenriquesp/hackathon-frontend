@@ -69,7 +69,11 @@ export function useMaterialActions() {
       } else {
         throw new Error('URL de download não encontrada');
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Se erro 401, significa que precisa fazer login
+      if (error.response?.status === 401 || error.message?.includes('Token de acesso')) {
+        throw new Error('Você precisa fazer login para baixar materiais');
+      }
       throw error;
     }
   };

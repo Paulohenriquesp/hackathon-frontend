@@ -139,23 +139,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     },
   });
 
-  // Query para verificar token (executa sempre ao inicializar)
+  // Query para verificar token (só executa se tiver token em memória)
   const { isLoading } = useQuery({
     queryKey: ['auth', 'verify'],
     queryFn: async () => {
-      // Tenta verificar o token mesmo sem estado local
-      // O backend deve verificar cookies ou sessão
+      const token = authStore.getToken();
+
+      if (!token) {
+        throw new Error('Sem token para verificar');
+      }
+
+      // Verifica o token com o backend
       const response = await fetch(`${API_URL}/auth/verify`, {
         method: 'GET',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
       });
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Token inválido ou não existe, limpar auth
+          // Token inválido, limpar auth
           authStore.clearAuth();
         }
         const errorData = await response.json().catch(() => ({}));
@@ -164,17 +170,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       return response.json();
     },
-    enabled: true, // Sempre executa ao inicializar
-    retry: 1,
+    enabled: !!authStore.getToken(), // Só executa se tiver token em memória
+    retry: false, // Não retenta se falhar
     onSuccess: (response) => {
       if (response.success && response.data) {
-        // Se o backend retornou usuário válido, restaurar estado
-        authStore.setAuth(response.data.user, response.data.token || 'validated');
-        console.log('✅ Sessão restaurada com sucesso:', response.data.user.name);
+        // Atualizar dados do usuário se necessário
+        authStore.setAuth(response.data.user, authStore.getToken()!);
+        console.log('✅ Sessão validada:', response.data.user.name);
       }
     },
     onError: (error) => {
-      console.log('ℹ️ Nenhuma sessão ativa encontrada:', error.message);
+      console.log('ℹ️ Token inválido ou expirado:', error.message);
       authStore.clearAuth();
     },
   });
