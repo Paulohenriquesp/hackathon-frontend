@@ -199,6 +199,26 @@ export const materialService = {
 
     const response = await api.get(`/materials/user/my-materials?${params.toString()}`);
     return response.data;
+  },
+
+  // Deletar material (apenas autor)
+  async deleteMaterial(id: string): Promise<{ success: boolean; message: string }> {
+    const response = await api.delete(`/materials/${id}`);
+    return response.data;
+  },
+
+  // Atualizar material (apenas autor)
+  async updateMaterial(id: string, data: Partial<{
+    title: string;
+    description: string;
+    discipline: string;
+    grade: string;
+    materialType: string;
+    subTopic?: string;
+    difficulty: string;
+  }>): Promise<{ success: boolean; data: Material; message: string }> {
+    const response = await api.put(`/materials/${id}`, data);
+    return response.data;
   }
 };
 

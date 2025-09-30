@@ -57,6 +57,25 @@ export function useMaterialActions() {
     },
   });
 
+  // Mutation para deletar material
+  const deleteMutation = useMutation({
+    mutationFn: async (materialId: string) => {
+      const response = await materialService.deleteMaterial(materialId);
+      return response;
+    },
+    onSuccess: () => {
+      // Invalidar todas as queries de materiais
+      invalidateMaterialQueries();
+      // Invalidar dashboard (atualiza contadores)
+      invalidateDashboard();
+      // Invalidar tudo para garantir atualização completa
+      invalidateAll();
+    },
+    onError: (error) => {
+      console.error('Erro ao deletar material:', error);
+    },
+  });
+
   // Função para fazer download
   const downloadMaterial = async (materialId: string) => {
     try {
@@ -88,10 +107,21 @@ export function useMaterialActions() {
     }
   };
 
+  // Função para deletar material
+  const deleteMaterial = async (materialId: string) => {
+    try {
+      const result = await deleteMutation.mutateAsync(materialId);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   return {
     // Funções principais
     downloadMaterial,
     rateMaterial,
+    deleteMaterial,
 
     // Estados das mutations
     download: {
@@ -104,9 +134,15 @@ export function useMaterialActions() {
       error: rateMutation.error,
       isSuccess: rateMutation.isSuccess,
     },
+    delete: {
+      isLoading: deleteMutation.isPending,
+      error: deleteMutation.error,
+      isSuccess: deleteMutation.isSuccess,
+    },
 
     // Reset functions
     resetDownload: downloadMutation.reset,
     resetRating: rateMutation.reset,
+    resetDelete: deleteMutation.reset,
   };
 }

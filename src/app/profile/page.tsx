@@ -8,8 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { useToast } from '@/components/ui/Toast';
+import { ConfirmModal } from '@/components/ui/Modal';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useProfile } from '@/hooks/useProfile';
+import { useMaterialActions } from '@/hooks/useMaterialActions';
 import {
   User,
   Mail,
@@ -24,7 +26,8 @@ import {
   X,
   TrendingUp,
   Award,
-  BarChart3
+  BarChart3,
+  Trash2
 } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -33,10 +36,13 @@ export default function ProfilePage() {
   const { showToast } = useToast();
   const { materials, stats, loading, error, refresh } = useDashboard();
   const { updateProfile, loading: profileLoading } = useProfile();
+  const { deleteMaterial, delete: deleteState } = useMaterialActions();
 
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState('');
   const [editedSchool, setEditedSchool] = useState('');
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [materialToDelete, setMaterialToDelete] = useState<{ id: string; title: string } | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -88,6 +94,30 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     await logout();
     router.push('/login');
+  };
+
+  const handleDeleteClick = (materialId: string, materialTitle: string) => {
+    setMaterialToDelete({ id: materialId, title: materialTitle });
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!materialToDelete) return;
+
+    try {
+      await deleteMaterial(materialToDelete.id);
+      showToast('Material excluído com sucesso!', 'success', 3000);
+      setDeleteModalOpen(false);
+      setMaterialToDelete(null);
+      refresh();
+    } catch (error: any) {
+      showToast(error.message || 'Erro ao excluir material', 'error', 4000);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteModalOpen(false);
+    setMaterialToDelete(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -164,7 +194,7 @@ export default function ProfilePage() {
                       value={editedName}
                       onChange={(e) => setEditedName(e.target.value)}
                       placeholder="Seu nome"
-                      disabled={isSaving}
+                      disabled={profileLoading}
                     />
                   ) : (
                     <div className="flex items-center gap-2 text-gray-900">
@@ -196,7 +226,7 @@ export default function ProfilePage() {
                       value={editedSchool}
                       onChange={(e) => setEditedSchool(e.target.value)}
                       placeholder="Nome da escola"
-                      disabled={isSaving}
+                      disabled={profileLoading}
                     />
                   ) : (
                     <div className="flex items-center gap-2 text-gray-900">
@@ -386,8 +416,28 @@ export default function ProfilePage() {
                         className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
                       >
                         <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-semibold text-gray-900">{material.title}</h3>
-                          <Badge variant="secondary">{material.discipline}</Badge>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900">{material.title}</h3>
+                          </div>
+                          <div className="flex items-center gap-2 ml-4">
+                            <Badge variant="secondary">{material.discipline}</Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => router.push(`/materials/${material.id}/edit`)}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteClick(material.id, material.title)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
 
                         <p className="text-sm text-gray-600 mb-3 line-clamp-2">
@@ -417,6 +467,19 @@ export default function ProfilePage() {
             </Card>
           </div>
         </div>
+
+        {/* Modal de Confirmação de Exclusão */}
+        <ConfirmModal
+          isOpen={deleteModalOpen}
+          onClose={handleCancelDelete}
+          onConfirm={handleConfirmDelete}
+          title="Excluir Material"
+          message={`Tem certeza que deseja excluir o material "${materialToDelete?.title}"? Esta ação não pode ser desfeita.`}
+          confirmText="Sim, Excluir"
+          cancelText="Cancelar"
+          variant="danger"
+          isLoading={deleteState.isLoading}
+        />
       </div>
     </div>
   );
