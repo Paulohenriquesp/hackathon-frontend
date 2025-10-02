@@ -8,7 +8,8 @@ import {
   FileText,
   Loader2,
   MessageSquare,
-  Lock
+  Lock,
+  Sparkles
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Material } from '@/services/materialService';
@@ -231,6 +232,21 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
             Avaliar
           </Button>
         </div>
+
+        {/* Botão de Gerar Atividades com IA */}
+        {isAuthenticated && (
+          <div className="mt-2">
+            <Button
+              onClick={() => router.push(`/materials/${material.id}/activities`)}
+              variant="outline"
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border-purple-200 text-purple-700"
+              size="sm"
+            >
+              <Sparkles className="h-4 w-4" />
+              Gerar Atividades com IA
+            </Button>
+          </div>
+        )}
 
         {/* Rating Form */}
         {showRatingForm && (
