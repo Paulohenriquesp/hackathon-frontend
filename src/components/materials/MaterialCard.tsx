@@ -214,34 +214,45 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
 
       {/* Actions */}
       <div className="p-4 border-t border-gray-100 bg-gray-50">
-        <div className="grid grid-cols-2 gap-2">
+        {isAuthenticated ? (
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              onClick={handleDownload}
+              disabled={download.isLoading || !material.fileUrl}
+              className="flex items-center justify-center gap-2"
+              size="sm"
+              variant="primary"
+            >
+              {download.isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              <span className="hidden sm:inline">Download</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => setShowRatingForm(!showRatingForm)}
+              className="flex items-center justify-center gap-2"
+              size="sm"
+            >
+              <Star className="h-4 w-4" />
+              <span className="hidden sm:inline">Avaliar</span>
+            </Button>
+          </div>
+        ) : (
           <Button
             onClick={handleDownload}
             disabled={download.isLoading || !material.fileUrl}
-            className="flex items-center justify-center gap-2"
+            className="w-full flex items-center justify-center gap-2"
             size="sm"
-            variant={!isAuthenticated ? 'outline' : 'primary'}
-          >
-            {download.isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : !isAuthenticated ? (
-              <Lock className="h-4 w-4" />
-            ) : (
-              <Download className="h-4 w-4" />
-            )}
-            <span className="hidden sm:inline">{!isAuthenticated ? 'Login' : 'Download'}</span>
-          </Button>
-
-          <Button
             variant="outline"
-            onClick={() => setShowRatingForm(!showRatingForm)}
-            className="flex items-center justify-center gap-2"
-            size="sm"
           >
-            <Star className="h-4 w-4" />
-            <span className="hidden sm:inline">Avaliar</span>
+            <Lock className="h-4 w-4" />
+            <span>Login para Baixar</span>
           </Button>
-        </div>
+        )}
 
         {/* Botão de Gerar Atividades com IA */}
         {isAuthenticated && (
