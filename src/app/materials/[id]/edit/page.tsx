@@ -22,13 +22,13 @@ import { CheckCircle2Icon, AlertCircleIcon, Loader2Icon, FileText } from 'lucide
 
 // Schema de validação (sem arquivo)
 const editMaterialSchema = z.object({
-  title: z.string().min(3, 'Título deve ter pelo menos 3 caracteres'),
-  description: z.string().min(10, 'Descrição deve ter pelo menos 10 caracteres'),
+  title: z.string().min(3, 'Título deve ter pelo menos 3 caracteres').max(100, 'Título deve ter no máximo 100 caracteres'),
+  description: z.string().min(10, 'Descrição deve ter pelo menos 10 caracteres').max(500, 'Descrição deve ter no máximo 500 caracteres'),
   discipline: z.string().min(1, 'Selecione uma disciplina'),
   grade: z.string().min(1, 'Selecione uma série'),
   materialType: z.string().min(1, 'Selecione o tipo de material'),
   difficulty: z.string().min(1, 'Selecione a dificuldade'),
-  subTopic: z.string().optional(),
+  subTopic: z.string().min(3, 'Subtópico deve ter pelo menos 3 caracteres').max(20, 'Subtópico deve ter no máximo 20 caracteres'),
 });
 
 type EditMaterialData = z.infer<typeof editMaterialSchema>;
@@ -321,9 +321,11 @@ export default function EditMaterialPage() {
 
               {/* Subtópico */}
               <Input
-                label="Subtópico"
+                label="Subtópico *"
                 {...register('subTopic')}
-                placeholder="Ex: Operações básicas, Frações equivalentes"
+                placeholder="Ex: Frações"
+                maxLength={20}
+                error={errors.subTopic?.message}
                 disabled={saving}
               />
 

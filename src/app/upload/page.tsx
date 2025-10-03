@@ -279,9 +279,11 @@ export default function UploadPage() {
 
               {/* Subtópico */}
               <Input
-                label="Subtópico"
+                label="Subtópico *"
                 {...register('subTopic')}
-                placeholder="Ex: Operações básicas, Frações equivalentes"
+                placeholder="Ex: Frações"
+                maxLength={20}
+                error={errors.subTopic?.message}
                 disabled={isUploading}
               />
 

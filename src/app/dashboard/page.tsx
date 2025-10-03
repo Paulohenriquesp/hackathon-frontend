@@ -216,10 +216,18 @@ export default function DashboardPage() {
                       </div>
 
                       <div className="flex gap-2 ml-6">
-                        <Button variant="outline" size="sm">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => router.push(`/materials/${material.id}/edit`)}
+                        >
                           Editar
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => router.push(`/materials/${material.id}`)}
+                        >
                           Ver Detalhes
                         </Button>
                       </div>

@@ -120,8 +120,11 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
 
   return (
     <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden flex flex-col">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-100">
+      {/* Header - Clicável */}
+      <div
+        className="p-4 border-b border-gray-100 cursor-pointer"
+        onClick={() => router.push(`/materials/${material.id}`)}
+      >
         <div className="flex items-start justify-between mb-2">
           <h3
             className="text-lg font-semibold text-gray-900 truncate flex-1"
@@ -147,19 +150,24 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
         </p>
 
         {/* Subtópico (se houver) */}
-        {material.subTopic && (
-          <p
-            className="text-gray-500 text-xs italic truncate"
-            title={`Subtópico: ${material.subTopic}`}
-          >
-            Subtópico: {material.subTopic}
-          </p>
+        {material.subTopic && material.subTopic.trim() !== '' && (
+          <div className="mt-2 pt-2 border-t border-gray-100">
+            <p
+              className="text-gray-600 text-xs truncate"
+              title={`Subtópico: ${material.subTopic}`}
+            >
+              <span className="font-semibold text-gray-700">Subtópico:</span> {material.subTopic}
+            </p>
+          </div>
         )}
 
       </div>
 
-      {/* Info Section */}
-      <div className="p-4 space-y-3">
+      {/* Info Section - Clicável */}
+      <div
+        className="p-4 space-y-3 cursor-pointer"
+        onClick={() => router.push(`/materials/${material.id}`)}
+      >
         {/* Metadados */}
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="flex items-center gap-2">

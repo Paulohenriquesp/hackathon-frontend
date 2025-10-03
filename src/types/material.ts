@@ -55,7 +55,9 @@ export const uploadMaterialSchema = z.object({
   materialType: z.nativeEnum(MaterialType, { 
     message: 'Tipo de material é obrigatório' 
   }),
-  subTopic: z.string().optional(),
+  subTopic: z.string()
+    .min(3, 'Subtópico deve ter pelo menos 3 caracteres')
+    .max(20, 'Subtópico deve ter no máximo 20 caracteres'),
   difficulty: z.nativeEnum(Difficulty, { 
     message: 'Dificuldade é obrigatória' 
   }),
