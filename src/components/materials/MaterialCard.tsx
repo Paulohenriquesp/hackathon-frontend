@@ -262,7 +262,7 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
           </Button>
         )}
 
-        {/* Botão de Gerar Plano de Aula + Atividades */}
+        {/* Botão de Gerar Plano de Aula + Atividades com IA*/}
         {isAuthenticated && (
           <div className="mt-2">
             <Button
@@ -272,7 +272,7 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
               size="sm"
             >
               <Sparkles className="h-4 w-4" />
-              Gerar Plano de Aula + Atividades
+              Gerar Plano de Aula + Atividades com IA
             </Button>
           </div>
         )}

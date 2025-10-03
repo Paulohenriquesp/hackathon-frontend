@@ -181,7 +181,7 @@ export default function MaterialActivitiesPage() {
                 className="bg-purple-600 hover:bg-purple-700"
               >
                 <Sparkles className="h-5 w-5 mr-2" />
-                Gerar Plano de Aula + Atividades
+                Gerar Plano de Aula + Atividades com IA
               </Button>
               <p className="text-sm text-gray-500 mt-4">
                 Isso pode levar alguns segundos...
