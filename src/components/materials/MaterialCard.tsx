@@ -262,7 +262,7 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
           </Button>
         )}
 
-        {/* Botão de Gerar Atividades com IA */}
+        {/* Botão de Gerar Plano de Aula + Atividades */}
         {isAuthenticated && (
           <div className="mt-2">
             <Button
@@ -272,7 +272,7 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
               size="sm"
             >
               <Sparkles className="h-4 w-4" />
-              Gerar Atividades com IA
+              Gerar Plano de Aula + Atividades
             </Button>
           </div>
         )}
@@ -298,7 +298,20 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
                   placeholder="Compartilhe sua opinião sobre este material..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
                   rows={2}
+                  maxLength={500}
                 />
+                <div className="flex justify-between items-center mt-1">
+                  <p className="text-xs text-gray-500">
+                    Máximo 500 caracteres para comentários construtivos
+                  </p>
+                  <p className={`text-xs font-medium ${
+                    userComment.length >= 500 ? 'text-red-600' :
+                    userComment.length >= 450 ? 'text-yellow-600' :
+                    'text-gray-500'
+                  }`}>
+                    {userComment.length}/500
+                  </p>
+                </div>
               </div>
 
               <div className="flex gap-2">
