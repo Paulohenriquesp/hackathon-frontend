@@ -284,7 +284,7 @@ export default function MaterialDetailPage() {
                       className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border-purple-200 text-purple-700"
                     >
                       <Sparkles className="h-4 w-4" />
-                      Gerar Atividades
+                      Gerar Plano + Atividades com IA
                     </Button>
                   </>
                 ) : (
@@ -322,7 +322,20 @@ export default function MaterialDetailPage() {
                       placeholder="Compartilhe sua experiência com este material..."
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
                       rows={3}
+                      maxLength={500}
                     />
+                    <div className="flex justify-between items-center mt-1">
+                      <p className="text-xs text-gray-500">
+                        Máximo 500 caracteres para comentários construtivos
+                      </p>
+                      <p className={`text-xs font-medium ${
+                        userComment.length >= 500 ? 'text-red-600' :
+                        userComment.length >= 450 ? 'text-yellow-600' :
+                        'text-gray-500'
+                      }`}>
+                        {userComment.length}/500
+                      </p>
+                    </div>
                   </div>
 
                   <div className="flex gap-2">

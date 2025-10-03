@@ -418,7 +418,7 @@ export default function ProfilePage() {
                               size="sm"
                               onClick={() => router.push(`/materials/${material.id}/activities`)}
                               className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
-                              title="Gerar Atividades com IA"
+                              title="Gerar Plano de Aula + Atividades"
                             >
                               <Sparkles className="h-4 w-4" />
                             </Button>
