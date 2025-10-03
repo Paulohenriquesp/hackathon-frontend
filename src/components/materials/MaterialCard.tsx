@@ -51,12 +51,6 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
     return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}min` : `${hours}h`;
   };
 
-  // Função utilitária para truncar texto
-  const truncateText = (text: string, maxLength: number = 40): string => {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength).trim() + '...';
-  };
-
   const renderStars = (rating: number, interactive: boolean = false, size: 'sm' | 'md' = 'sm') => {
     const starSize = size === 'sm' ? 'h-4 w-4' : 'h-5 w-5';
     
@@ -125,14 +119,17 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden">
+    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200 overflow-hidden flex flex-col">
       {/* Header */}
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-start justify-between mb-2">
-          <h3 className="text-lg font-semibold text-gray-900 line-clamp-2 flex-1">
+          <h3
+            className="text-lg font-semibold text-gray-900 truncate flex-1"
+            title={material.title}
+          >
             {material.title}
           </h3>
-          <div className="flex gap-1 ml-2">
+          <div className="flex gap-1 ml-2 flex-shrink-0">
             {material.isNew && (
               <Badge variant="primary" className="text-xs">Novo</Badge>
             )}
@@ -142,9 +139,22 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
           </div>
         </div>
 
-        <p className="text-gray-600 text-sm mb-3">
-          {truncateText(material.description)}
+        <p
+          className="text-gray-600 text-sm mb-2 truncate"
+          title={material.description}
+        >
+          {material.description}
         </p>
+
+        {/* Subtópico (se houver) */}
+        {material.subTopic && (
+          <p
+            className="text-gray-500 text-xs italic truncate"
+            title={`Subtópico: ${material.subTopic}`}
+          >
+            Subtópico: {material.subTopic}
+          </p>
+        )}
 
       </div>
 
@@ -154,14 +164,14 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="flex items-center gap-2">
             <FileText className="h-4 w-4 text-gray-400" />
-            <span className="text-gray-600">{material.discipline}</span>
+            <span className="text-gray-600 truncate">{material.discipline}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-gray-600">{material.grade}</span>
+            <span className="text-gray-600 truncate">{material.grade}</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Badge className={getDifficultyColor(material.difficulty)}>
             {DifficultyLabels[material.difficulty]}
           </Badge>
@@ -188,14 +198,14 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
 
         {/* Author & Date */}
         <div className="flex items-center justify-between text-xs text-gray-500">
-          <div className="flex items-center gap-1">
-            <User className="h-3 w-3" />
-            <span>{material.author.name}</span>
+          <div className="flex items-center gap-1 truncate">
+            <User className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">{material.author.name}</span>
             {material.author.school && (
-              <span>• {material.author.school}</span>
+              <span className="truncate">• {material.author.school}</span>
             )}
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <Calendar className="h-3 w-3" />
             <span>{formatDate(material.createdAt)}</span>
           </div>
@@ -204,11 +214,11 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
 
       {/* Actions */}
       <div className="p-4 border-t border-gray-100 bg-gray-50">
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <Button
             onClick={handleDownload}
             disabled={download.isLoading || !material.fileUrl}
-            className="flex-1 flex items-center gap-2"
+            className="flex items-center justify-center gap-2"
             size="sm"
             variant={!isAuthenticated ? 'outline' : 'primary'}
           >
@@ -219,17 +229,17 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
             ) : (
               <Download className="h-4 w-4" />
             )}
-            {!isAuthenticated ? 'Login para Baixar' : 'Download'}
+            <span className="hidden sm:inline">{!isAuthenticated ? 'Login' : 'Download'}</span>
           </Button>
 
           <Button
             variant="outline"
             onClick={() => setShowRatingForm(!showRatingForm)}
-            className="flex items-center gap-2"
+            className="flex items-center justify-center gap-2"
             size="sm"
           >
             <Star className="h-4 w-4" />
-            Avaliar
+            <span className="hidden sm:inline">Avaliar</span>
           </Button>
         </div>
 
@@ -267,7 +277,7 @@ export function MaterialCard({ material, onRatingChange }: MaterialCardProps) {
                   value={userComment}
                   onChange={(e) => setUserComment(e.target.value)}
                   placeholder="Compartilhe sua opinião sobre este material..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder-gray-400"
                   rows={2}
                 />
               </div>

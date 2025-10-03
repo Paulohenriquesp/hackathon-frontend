@@ -54,7 +54,7 @@ export function SearchFilters({ onFiltersChange, loading, initialFilters = {} }:
             placeholder="Buscar materiais por título, descrição..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-400"
             disabled={loading}
           />
         </div>
@@ -99,7 +99,7 @@ export function SearchFilters({ onFiltersChange, loading, initialFilters = {} }:
               <select
                 value={filters.discipline || ''}
                 onChange={(e) => handleFilterChange('discipline', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                 disabled={loading}
               >
                 <option value="">Todas as disciplinas</option>
@@ -117,7 +117,7 @@ export function SearchFilters({ onFiltersChange, loading, initialFilters = {} }:
               <select
                 value={filters.grade || ''}
                 onChange={(e) => handleFilterChange('grade', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                 disabled={loading}
               >
                 <option value="">Todas as séries</option>
@@ -135,7 +135,7 @@ export function SearchFilters({ onFiltersChange, loading, initialFilters = {} }:
               <select
                 value={filters.materialType || ''}
                 onChange={(e) => handleFilterChange('materialType', e.target.value as MaterialType)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                 disabled={loading}
               >
                 <option value="">Todos os tipos</option>
@@ -153,7 +153,7 @@ export function SearchFilters({ onFiltersChange, loading, initialFilters = {} }:
               <select
                 value={filters.difficulty || ''}
                 onChange={(e) => handleFilterChange('difficulty', e.target.value as Difficulty)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                 disabled={loading}
               >
                 <option value="">Todas as dificuldades</option>
@@ -174,7 +174,7 @@ export function SearchFilters({ onFiltersChange, loading, initialFilters = {} }:
               <select
                 value={filters.minRating || ''}
                 onChange={(e) => handleFilterChange('minRating', e.target.value ? Number(e.target.value) : undefined)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                 disabled={loading}
               >
                 <option value="">Qualquer avaliação</option>
@@ -193,7 +193,7 @@ export function SearchFilters({ onFiltersChange, loading, initialFilters = {} }:
               <select
                 value={filters.sortBy || 'createdAt'}
                 onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                 disabled={loading}
               >
                 <option value="createdAt">Mais recentes</option>
@@ -217,7 +217,7 @@ export function SearchFilters({ onFiltersChange, loading, initialFilters = {} }:
                     className="mr-2"
                     disabled={loading}
                   />
-                  <span className="text-sm">Em destaque</span>
+                  <span className="text-sm text-gray-900">Em destaque</span>
                 </label>
                 <label className="flex items-center">
                   <input
@@ -227,7 +227,7 @@ export function SearchFilters({ onFiltersChange, loading, initialFilters = {} }:
                     className="mr-2"
                     disabled={loading}
                   />
-                  <span className="text-sm">Com arquivo</span>
+                  <span className="text-sm text-gray-900">Com arquivo</span>
                 </label>
               </div>
             </div>

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Material } from '@/types';
+import { MaterialTypeLabels, DifficultyLabels } from '@/types/material';
 import { useDashboard } from '@/hooks/useDashboard';
 
 export default function DashboardPage() {
@@ -194,7 +195,7 @@ export default function DashboardPage() {
                         <div className="flex flex-wrap gap-2 mb-4">
                           <Badge variant="primary">{material.discipline}</Badge>
                           <Badge variant="secondary">{material.grade}</Badge>
-                          <Badge variant="default">{material.materialType}</Badge>
+                          <Badge variant="default">{MaterialTypeLabels[material.materialType as keyof typeof MaterialTypeLabels]}</Badge>
                         </div>
 
                         <div className="flex items-center gap-6 text-sm text-gray-500">

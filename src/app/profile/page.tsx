@@ -27,7 +27,8 @@ import {
   TrendingUp,
   Award,
   BarChart3,
-  Trash2
+  Trash2,
+  Sparkles
 } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -375,16 +376,7 @@ export default function ProfilePage() {
             {/* Meus Materiais */}
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Meus Materiais Recentes</CardTitle>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => router.push('/materials?author=me')}
-                  >
-                    Ver Todos
-                  </Button>
-                </div>
+                <CardTitle>Meus Materiais ({materials.length})</CardTitle>
               </CardHeader>
               <CardContent>
                 {error && (
@@ -409,8 +401,8 @@ export default function ProfilePage() {
                 )}
 
                 {!error && materials.length > 0 && (
-                  <div className="space-y-4">
-                    {materials.slice(0, 5).map((material) => (
+                  <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                    {materials.map((material) => (
                       <div
                         key={material.id}
                         className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
@@ -424,8 +416,18 @@ export default function ProfilePage() {
                             <Button
                               variant="ghost"
                               size="sm"
+                              onClick={() => router.push(`/materials/${material.id}/activities`)}
+                              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50"
+                              title="Gerar Atividades com IA"
+                            >
+                              <Sparkles className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => router.push(`/materials/${material.id}/edit`)}
                               className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              title="Editar Material"
                             >
                               <Edit2 className="h-4 w-4" />
                             </Button>
@@ -434,6 +436,7 @@ export default function ProfilePage() {
                               size="sm"
                               onClick={() => handleDeleteClick(material.id, material.title)}
                               className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              title="Excluir Material"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

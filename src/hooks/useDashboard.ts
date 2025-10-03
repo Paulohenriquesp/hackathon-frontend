@@ -29,7 +29,7 @@ export function useDashboard(): UseDashboardReturn {
     refetch: refetchMaterials
   } = useQuery({
     queryKey: ['materials', 'my-materials', 'dashboard', user?.id],
-    queryFn: () => materialService.getMyMaterials({ page: 1, limit: 5 }),
+    queryFn: () => materialService.getMyMaterials({ page: 1, limit: 100 }), // Buscar todos (até 100)
     enabled: !!isAuthenticated && !!user?.id,
     staleTime: 1000 * 60 * 2, // 2 minutos
     retry: 1,
