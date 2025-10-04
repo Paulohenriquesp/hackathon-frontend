@@ -67,7 +67,7 @@ npm run lint            # ESLint
 - **Login**: Formulário com validação
 - **Registro**: Cadastro completo de professor
 - **Proteção**: Rotas protegidas automaticamente
-- **Persistência**: Token JWT no localStorage
+- **Segurança**: Token JWT em HttpOnly cookies
 - **Perfil**: Edição de dados pessoais e escola
 
 ### 📊 Dashboard (`/dashboard`)
@@ -239,11 +239,15 @@ showToast('Material salvo com sucesso!', 'success', 3000);
 
 ## 🔐 Autenticação
 
+### Sistema de Autenticação Seguro (HttpOnly Cookies)
+
+O sistema utiliza **HttpOnly cookies** para armazenar tokens JWT.
+
 ```tsx
-// Context de autenticação com JWT
+// Context de autenticação com JWT em HttpOnly cookies
 const { user, login, register, logout, isAuthenticated } = useAuth();
 
-// Login com backend
+// Login com backend (token salvo automaticamente em cookie)
 const success = await login({ email, password });
 
 // Proteção de rota
@@ -252,6 +256,26 @@ useEffect(() => {
     router.push('/login');
   }
 }, [isAuthenticated, authLoading, router]);
+
+```
+### Configuração da Autenticação
+
+```typescript
+// Todas as requisições enviam cookies automaticamente
+const response = await fetch(`${API_URL}/auth/login`, {
+  method: 'POST',
+  credentials: 'include', // Envia cookies automaticamente
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ email, password }),
+});
+
+// Axios também configurado para cookies
+const api = axios.create({
+  baseURL: API_URL,
+  withCredentials: true, // Envia cookies automaticamente
+});
 ```
 
 ## 🤖 Integração com IA (OpenAI)

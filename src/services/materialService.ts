@@ -1,22 +1,16 @@
 import axios from 'axios';
 import { MaterialType, Difficulty } from '@/types/material';
-import { authStore } from '@/contexts/AuthContext';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
-// Configurar axios com interceptor para Authorization header
+// Configurar axios para usar cookies HttpOnly
 const api = axios.create({
   baseURL: API_URL,
+  withCredentials: true, // IMPORTANTE: Envia cookies automaticamente
 });
 
-// Interceptor para adicionar token automaticamente
-api.interceptors.request.use((config) => {
-  const token = authStore.getToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+// Não precisamos mais de interceptor para Authorization
+// O cookie HttpOnly é enviado automaticamente em todas as requisições
 
 // Interfaces
 export interface Material {

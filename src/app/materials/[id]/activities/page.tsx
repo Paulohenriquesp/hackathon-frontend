@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { authStore } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -59,20 +58,11 @@ export default function MaterialActivitiesPage() {
     setError(null);
 
     try {
-      const token = authStore.getToken();
-
-      if (!token) {
-        router.push('/login');
-        return;
-      }
-
       const response = await axios.post<ContentGenerationResponse>(
         `${API_URL}/materials/${materialId}/generate-activities`,
         {},
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          withCredentials: true, // Envia cookies automaticamente
         }
       );
 

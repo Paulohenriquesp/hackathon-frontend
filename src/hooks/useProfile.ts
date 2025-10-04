@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { authStore } from '@/contexts/AuthContext';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -17,19 +16,12 @@ export function useProfile() {
     setError(null);
 
     try {
-      const token = authStore.getToken();
-
-      if (!token) {
-        throw new Error('Não autenticado');
-      }
-
       const response = await fetch(`${API_URL}/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
-        credentials: 'include',
+        credentials: 'include', // Envia cookies automaticamente
         body: JSON.stringify(data),
       });
 
@@ -41,8 +33,6 @@ export function useProfile() {
       const result = await response.json();
 
       if (result.success && result.data) {
-        // Atualizar o authStore com os novos dados
-        authStore.setAuth(result.data, token);
         return result.data;
       }
 

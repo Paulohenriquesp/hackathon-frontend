@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { UploadMaterialData, UploadStatus, UploadState } from '@/types/material';
-import { authStore } from '@/contexts/AuthContext';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -113,18 +112,14 @@ export function useUpload() {
 
       // Configurar e enviar requisição
       xhr.open('POST', `${API_URL}/materials`);
-      
-      // Adicionar token de autorização
-      const token = authStore.getToken();
-      if (!token) {
-        throw new Error('Token de acesso não encontrado. Faça login novamente.');
-      }
-      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-      console.log('✅ useUpload: Authorization header definido');
-      
+
+      // XMLHttpRequest envia cookies automaticamente se withCredentials = true
+      xhr.withCredentials = true;
+      console.log('✅ useUpload: withCredentials configurado (cookies serão enviados automaticamente)');
+
       // Timeout de 2 minutos para uploads grandes
       xhr.timeout = 120000;
-      
+
       console.log('🚀 useUpload: Enviando requisição...');
       xhr.send(formData);
 

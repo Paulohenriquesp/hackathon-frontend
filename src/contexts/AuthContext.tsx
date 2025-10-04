@@ -1,187 +1,87 @@
 'use client';
 
-import React, { createContext, useContext, useRef } from 'react';
+import React, { createContext, useContext } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AuthContextType, User, LoginData, RegisterData } from '@/types';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
-
-interface AuthState {
-  user: User | null;
-  token: string | null;
-}
-
-class AuthStore {
-  private state: AuthState = { user: null, token: null };
-  private listeners: Set<() => void> = new Set();
-
-  getState() {
-    return this.state;
-  }
-
-  setState(newState: Partial<AuthState>) {
-    this.state = { ...this.state, ...newState };
-    this.listeners.forEach(listener => listener());
-  }
-
-  subscribe(listener: () => void) {
-    this.listeners.add(listener);
-    return () => this.listeners.delete(listener);
-  }
-
-  setAuth(user: User, token: string) {
-    this.setState({ user, token });
-  }
-
-  clearAuth() {
-    this.setState({ user: null, token: null });
-  }
-
-  getToken() {
-    return this.state.token;
-  }
-}
-
-const authStore = new AuthStore();
+import { authService } from '@/services/authService';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Hook para usar o store de auth
-function useAuthStore() {
-  const [state, setState] = React.useState(authStore.getState());
-
-  React.useEffect(() => {
-    return authStore.subscribe(() => {
-      setState(authStore.getState());
-    });
-  }, []);
-
-  return state;
-}
-
-// Função para fazer requisições com token
-export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
-  const token = authStore.getToken();
-  
-  const response = await fetch(`${API_URL}${url}`, {
-    ...options,
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
-      ...options.headers,
-    },
-  });
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      // Token inválido, limpar auth
-      authStore.clearAuth();
-    }
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `HTTP ${response.status}`);
-  }
-
-  return response.json();
-};
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const authState = useAuthStore();
   const queryClient = useQueryClient();
+
+  // Query para verificar sessão (usa cookie HttpOnly automaticamente)
+  const { data: authData, isLoading: isVerifying } = useQuery({
+    queryKey: ['auth', 'verify'],
+    queryFn: async () => {
+      try {
+        console.log('🔍 AuthContext: Verificando sessão com cookie HttpOnly...');
+
+        const response = await fetch(`${API_URL}/auth/verify`, {
+          method: 'GET',
+          credentials: 'include', // Envia cookie automaticamente
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            console.log('ℹ️ AuthContext: Sessão expirada ou não encontrada');
+            return null;
+          }
+          throw new Error('Erro ao verificar sessão');
+        }
+
+        const data = await response.json();
+        console.log('✅ AuthContext: Sessão válida:', data.data?.user?.name);
+        return data.data?.user || null;
+      } catch (error: any) {
+        console.log('ℹ️ AuthContext: Erro na verificação:', error.message);
+        return null;
+      }
+    },
+    retry: false, // Não retenta se falhar
+    staleTime: 5 * 60 * 1000, // Considera dados válidos por 5 minutos
+  });
 
   // Mutation para login
   const loginMutation = useMutation({
     mutationFn: async (data: LoginData) => {
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Erro no login');
+      const result = await authService.login(data);
+      if (!result.success) {
+        throw new Error(result.error || 'Erro no login');
       }
-
-      return response.json();
+      return result.data!;
     },
-    onSuccess: (response) => {
-      if (response.success && response.data) {
-        authStore.setAuth(response.data.user, response.data.token);
-        console.log('✅ Login bem-sucedido, token armazenado em memória');
-      }
+    onSuccess: (data) => {
+      // Atualizar cache com dados do usuário
+      queryClient.setQueryData(['auth', 'verify'], data.user);
+      console.log('✅ AuthContext: Login bem-sucedido');
+    },
+    onError: (error: any) => {
+      console.error('❌ AuthContext: Erro no login:', error.message);
     },
   });
 
   // Mutation para registro
   const registerMutation = useMutation({
     mutationFn: async (data: RegisterData) => {
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Erro no registro');
+      const result = await authService.register(data);
+      if (!result.success) {
+        throw new Error(result.error || 'Erro no registro');
       }
-
-      return response.json();
+      return result.data!;
     },
-    onSuccess: (response) => {
-      if (response.success && response.data) {
-        authStore.setAuth(response.data.user, response.data.token);
-        console.log('✅ Registro bem-sucedido, token armazenado em memória');
-      }
+    onSuccess: (data) => {
+      // Atualizar cache com dados do usuário
+      queryClient.setQueryData(['auth', 'verify'], data.user);
+      console.log('✅ AuthContext: Registro bem-sucedido');
     },
-  });
-
-  // Query para verificar token (só executa se tiver token em memória)
-  const { isLoading } = useQuery({
-    queryKey: ['auth', 'verify'],
-    queryFn: async () => {
-      const token = authStore.getToken();
-
-      if (!token) {
-        throw new Error('Sem token para verificar');
-      }
-
-      // Verifica o token com o backend
-      const response = await fetch(`${API_URL}/auth/verify`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          // Token inválido, limpar auth
-          authStore.clearAuth();
-        }
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP ${response.status}`);
-      }
-
-      return response.json();
-    },
-    enabled: !!authStore.getToken(), // Só executa se tiver token em memória
-    retry: false, // Não retenta se falhar
-    onSuccess: (response) => {
-      if (response.success && response.data) {
-        // Atualizar dados do usuário se necessário
-        authStore.setAuth(response.data.user, authStore.getToken()!);
-        console.log('✅ Sessão validada:', response.data.user.name);
-      }
-    },
-    onError: (error) => {
-      console.log('ℹ️ Token inválido ou expirado:', error.message);
-      authStore.clearAuth();
+    onError: (error: any) => {
+      console.error('❌ AuthContext: Erro no registro:', error.message);
     },
   });
 
@@ -205,29 +105,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      // Tentar chamar logout no backend (opcional)
-      if (authState.token) {
-        await fetchWithAuth('/auth/logout', { method: 'POST' }).catch(() => {
-          // Ignorar erros de logout no backend
-        });
-      }
-    } finally {
-      // Sempre limpar estado local
-      authStore.clearAuth();
+      // Chamar logout no backend (limpa cookie)
+      await authService.logout();
 
-      // Invalidar todo o cache do React Query para remover dados do usuário anterior
+      // Limpar cache local
+      queryClient.setQueryData(['auth', 'verify'], null);
       queryClient.clear();
 
-      console.log('✅ Logout realizado, memória e cache limpos');
+      console.log('✅ AuthContext: Logout realizado, cookie limpo pelo servidor');
+    } catch (error) {
+      console.error('❌ AuthContext: Erro no logout:', error);
+      // Mesmo com erro, limpar cache local
+      queryClient.setQueryData(['auth', 'verify'], null);
+      queryClient.clear();
     }
   };
 
-  const isAuthenticated = !!authState.user && !!authState.token;
-  const loading = loginMutation.isPending || registerMutation.isPending || isLoading;
+  const user = authData || null;
+  const isAuthenticated = !!user;
+  const loading = loginMutation.isPending || registerMutation.isPending || isVerifying;
 
   return (
     <AuthContext.Provider value={{
-      user: authState.user,
+      user,
       loading,
       login,
       register,
@@ -246,6 +146,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
-// Export do store para uso em outros lugares
-export { authStore };

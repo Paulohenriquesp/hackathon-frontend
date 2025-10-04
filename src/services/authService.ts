@@ -4,22 +4,19 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 export interface AuthResponse {
   user: User;
-  token: string;
 }
 
 export interface LoginResponse extends ApiResponse<AuthResponse> {}
 export interface RegisterResponse extends ApiResponse<AuthResponse> {}
 export interface ProfileResponse extends ApiResponse<User> {}
 
-// Função auxiliar para fazer requisições com Authorization header
+// Função auxiliar para fazer requisições com cookies
 const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
-  const token = localStorage.getItem('token');
-  
   const response = await fetch(`${API_URL}/auth${url}`, {
     ...options,
+    credentials: 'include', // IMPORTANTE: Envia cookies automaticamente
     headers: {
       'Content-Type': 'application/json',
-      ...(token && { 'Authorization': `Bearer ${token}` }),
       ...options.headers,
     },
   });
@@ -43,15 +40,10 @@ export const authService = {
           password: data.password,
         }),
       });
-      
-      // Salvar token no localStorage
-      if (responseData.success && responseData.data.token) {
-        localStorage.setItem('token', responseData.data.token);
-        localStorage.setItem('user', JSON.stringify(responseData.data.user));
-        console.log('✅ authService: Token salvo no localStorage');
-      }
-      
-      console.log('✅ authService: Login bem-sucedido');
+
+      // Token agora está no cookie HttpOnly - não precisa salvar em localStorage
+      console.log('✅ authService: Login bem-sucedido (token em cookie HttpOnly)');
+
       return {
         success: true,
         data: responseData.data,
@@ -78,15 +70,10 @@ export const authService = {
           school: data.school || undefined,
         }),
       });
-      
-      // Salvar token no localStorage
-      if (responseData.success && responseData.data.token) {
-        localStorage.setItem('token', responseData.data.token);
-        localStorage.setItem('user', JSON.stringify(responseData.data.user));
-        console.log('✅ authService: Token salvo no localStorage');
-      }
-      
-      console.log('✅ authService: Registro bem-sucedido');
+
+      // Token agora está no cookie HttpOnly - não precisa salvar em localStorage
+      console.log('✅ authService: Registro bem-sucedido (token em cookie HttpOnly)');
+
       return {
         success: true,
         data: responseData.data,
@@ -103,9 +90,9 @@ export const authService = {
 
   async verifyToken(): Promise<ApiResponse<User>> {
     try {
-      console.log('🔍 authService: Verificando token...');
+      console.log('🔍 authService: Verificando token (cookie HttpOnly)...');
       const responseData = await fetchWithAuth('/verify');
-      
+
       console.log('✅ authService: Token válido');
       return {
         success: true,
@@ -127,20 +114,16 @@ export const authService = {
       await fetchWithAuth('/logout', {
         method: 'POST',
       });
-      
-      // Limpar localStorage
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      console.log('✅ authService: Logout bem-sucedido, localStorage limpo');
-      
+
+      // Cookie será limpo pelo backend
+      console.log('✅ authService: Logout bem-sucedido, cookie limpo pelo servidor');
+
       return {
         success: true,
       };
     } catch (error: any) {
       console.error('❌ authService: Erro no logout:', error);
-      // Mesmo com erro, limpar localStorage
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      // Mesmo com erro, considerar logout bem-sucedido
       return {
         success: true,
       };
@@ -151,7 +134,7 @@ export const authService = {
     try {
       console.log('🔍 authService: Buscando perfil...');
       const responseData = await fetchWithAuth('/profile');
-      
+
       return {
         success: true,
         data: responseData.data,
